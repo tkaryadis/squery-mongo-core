@@ -1,0 +1,1 @@
+(window.webpackJsonp=window.webpackJsonp||[]).push([[49],{107:function(e){e.exports=JSON.parse('{"title":"Recent posts","items":[{"title":"Welcome","permalink":"/cmql-core/blog/welcome"},{"title":"Hello","permalink":"/cmql-core/blog/hello-world"},{"title":"Hola","permalink":"/cmql-core/blog/hola"}]}')}}]);

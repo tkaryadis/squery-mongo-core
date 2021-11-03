@@ -1,0 +1,2015 @@
+(ns cmql-core.operators.operators
+  (:refer-clojure :exclude [+ inc - dec * mod
+                            = not= > >= < <=
+                            and or not nor
+                            if-not cond
+                            into type boolean double int long string exists? nil? some? true? false? array? object?
+                            regex? string? int? decimal? double? boolean? number? rand
+                            let get get-in assoc assoc-in dissoc dissoc-in
+                            concat conj contains? range reverse count take subvec empty? not-empty? conj-distinct
+                            fn map filter reduce
+                            first last merge max min
+                            str subs re-find re-matcher re-seq replace])
+  (:require [clojure.core :as c]
+            [cmql-core.internal.convert.common :refer [args->nested-2args cmql-var-ref->mql-var-ref]]
+            [cmql-core.internal.convert.operators :refer [cmql-var-name get-nested-lets get-lets]]
+            [cmql-core.internal.convert.js-functions :refer [compile-library js-args-body js-info]]
+            [cmql-core.utils :refer [ordered-map]]))
+
+;;---------------------------query-operators--------------------------------
+
+;;Comparison
+(defn =- [field e]
+  {"$__qfilter__" {field {"$eq" e}}})
+
+(defn >- [field e]
+  {"$__qfilter__" {field {"$gt" e}}})
+
+(defn >=- [field e]
+  {"$__qfilter__" {field {"$gte" e}}})
+
+(defn <- [field e]
+  {"$__qfilter__" {field {"$lt" e}}})
+
+(defn <=- [field e]
+  {"$__qfilter__" {field {"$lte" e}}})
+
+(defn not=- [field e]
+  {"$__qfilter__" {field {"$ne" e}}})
+
+(defn in [field e-a]
+  {"$__qfilter__" {field {"$in" e-a}}})
+
+(defn nin [field e-a]
+  {"$__qfilter__" {field {"$nin" e-a}}})
+
+;;Logical
+
+(defn and- [& es]
+  {"$__qfilter__" {"$and" (c/mapv (c/fn [m] (if (c/and (c/map? m)
+                                                      (c/= (c/count m) 1)
+                                                      (c/contains? m "$__qfilter__"))
+                                             (c/get m "$__qfilter__")
+                                             m))
+                                 es)}})
+
+(defn nor- [& es]
+  {"$__qfilter__" {"$nor" (c/mapv (c/fn [m] (if (c/and (c/map? m)
+                                                       (c/= (c/count m) 1)
+                                                       (c/contains? m "$__qfilter__"))
+                                              (c/get m "$__qfilter__")
+                                              m))
+                                  es)}})
+
+(defn or- [& es]
+  {"$__qfilter__" {"$or" (c/mapv (c/fn [m] (if (c/and (c/map? m)
+                                                       (c/= (c/count m) 1)
+                                                       (c/contains? m "$__qfilter__"))
+                                              (c/get m "$__qfilter__")
+                                              m))
+                                  es)}})
+
+(defn not- [field e]
+  {"$__qfilter__" {field {"$not" e}}})
+
+;;Element query operators
+
+(defn exists- [field]
+  {"$__qfilter__" {field {"$exists" true}}})
+
+(defn not-exists- [field]
+  {"$__qfilter__" {field {"$exists" false}}})
+
+(defn type- [field & types]
+  (if (c/= (c/count types) 1)
+    {"$__qfilter__" {field {"$type" (c/first types)}}}
+    {"$__qfilter__" {field {"$type" (c/into [] types)}}}))
+
+;;Evaluation Query operators
+
+;;TODO
+
+;;---------------------------Arithmetic-------------------------------------
+;;--------------------------------------------------------------------------
+;;--------------------------------------------------------------------------
+
+(defn abs
+  "$abs"
+  [e-n]
+  {"$abs" e-n})
+
+(defn +
+  "$add
+  Add numbers or numbers(milliseconds) to dates
+  Call
+  (+_ 1 2)
+  (+_ :adate (*_ 5 60 1000))"
+  [& es]
+  {"$add" (vec es)})
+
+(defn inc [e]
+  {"$add" [e 1]})
+
+(defn -
+  "$substract
+  Substract numbers or numbers(milliseconds) to dates
+  Call
+  (-_ 2 1)
+  (-_ :adate (*_ 5 60 1000))"
+  ([e-n]
+   {"$substract" [0 e-n]})
+  ([e-n & es]
+   (args->nested-2args "$subtract" (apply (partial c/conj [e-n]) es))))
+
+(defn dec [e]
+  {"$subtract" [e 1]})
+
+(defn *
+  "$multiply
+  Multiply numbers
+  Call
+  (* 1 2.3 5)
+  "
+  [& exprs]
+  {"$multiply" (vec exprs)})
+
+(defn pow
+  "$pow"
+  [e1-n e2-n]
+  {"$pow" [ e1-n e2-n ] })
+
+(defn exp
+  "$exp
+  e(Euler’s number) pow e-n"
+  [e-n]
+  {"$exp" e-n})
+
+(defn ln
+  "$ln"
+  [e-n]
+  {"$ln" e-n})
+
+(defn log
+  "$log
+  log10 if no base"
+  ([e-n]
+   {"$log" e-n})
+  ([e-n base]
+   {"$log" [ e-n base]}))
+
+(defn ceil
+  "$ceil"
+  [e-n]
+  {"$ceil" e-n})
+
+(defn floor
+  "$floor"
+  [e-n]
+  {"$floor" e-n})
+
+(defn round
+  "$round
+  e-n  integer, double, decimal, or long
+  place-e-n = -20 < e-n < 100  default=0 if missing"
+  ([e-n]
+   { "$round"  [ e-n]})
+  ([e-n place-e-n]
+   { "$round"  [ e-n place-e-n ] }))
+
+(defn trunc
+  "$trunc
+  e-n integer, double, decimal, or long
+  place-e-n = -20 < e-n < 100  default=0 if missing
+  like round,but just removes,not round"
+  ([e-n]
+   { "$trunc"  [ e-n]})
+  ([e-n place-e-n]
+   { "$trunc"  [ e-n place-e-n ] }))
+
+(defn sqrt
+  "$sqrt"
+  [e-n]
+  {"$sqrt" e-n})
+
+(defn mod
+  "$mod"
+  [e1-n e2-n]
+  {"$mod" [ e1-n e2-n ]})
+
+(defn div
+  "$divide"
+  ([e-n]
+   {"$divide" [1 e-n]})
+  ([e-n & es]
+   (args->nested-2args "$divide" (apply (partial c/conj [e-n]) es))))
+
+;;---------------------------Comparison-------------------------------------
+;;--------------------------------------------------------------------------
+;;--------------------------------------------------------------------------
+
+(defn cmp
+  "$cmp
+  Compares value, works on all types
+  Returns 1 if e1>e2 , -1 if e1<e2 , 0 if e1=e2"
+  [e1 e2]
+  {"$cmp" [e1 e2]})
+
+(declare and not)
+
+(defn =
+  "$eq
+  Check for equality, works on all types"
+  [e1 e2 & es]
+  (args->nested-2args "$eq" (apply (partial c/conj [e1 e2]) es)))
+
+
+(defn not=
+  "$ne"
+  ([e1 e2]
+   {"$ne" [e1 e2]})
+  ([e1 e2 & es]
+   (not (apply (partial = e1 e2) es))))
+
+
+(defn >
+  "$gt"
+  [e1 e2]
+  {"$gt" [e1 e2]})
+
+(defn >=
+  "$gte"
+  [e1 e2]
+  {"$gte" [e1 e2]})
+
+(defn <
+  "$lt"
+  [e1 e2]
+  {"$lt"  [e1 e2]})
+
+(defn <=
+  "$lte"
+  [e1 e2]
+  {"$lte"  [e1 e2]})
+
+
+
+;;---------------------------Boolean----------------------------------------
+;;--------------------------------------------------------------------------
+;;--------------------------------------------------------------------------
+
+(defn and
+  "$and
+  Logical and,short circuit,false if one false/0/null/undefined"
+  [& es]
+  {"$and" (vec es)})
+
+(defn or
+  "$or
+  Logical or,short circuit,false all false/0/null/undefined"
+  [& es]
+  {"$or" (vec es)})
+
+(defn not
+  "$not
+  Logical not,true if not (false/0/null/undefined)"
+  [e]
+  {"$not" [e]})
+
+(defn nor
+  "$not $or
+  (not- (or- ...))"
+  [& es]
+  (not (apply or es)))
+
+;;---------------------------Conditional------------------------------------
+;;--------------------------------------------------------------------------
+;;--------------------------------------------------------------------------
+
+(defn if-
+  "$cond
+  Call
+  (if- e-b e1 e2)"
+  [e-b e1 e2]
+  {"$cond" [e-b e1 e2]})
+
+(defn if-not
+  "$cond
+  e1 when e-b false
+  Call
+  (if-not e-b e1 e2)"
+  [e-b e1 e2]
+  {"$cond" [(not e-b) e1 e2]})
+
+(defn if-not-value
+  "$ifNull
+  Equivalent with (e nil or e not exist)
+  (if- (not-value?- e) nill-e e)"
+  [e nill-e]
+  {"$ifNull" [e nill-e]})
+
+(defn cond
+  "$switch
+  Call
+  (cond- cond1 e1   ; cond1=boolean-e
+         cond2 e2
+         ...
+         :else en)"
+  [& args]
+  (c/if-not (c/even? (c/count args))
+    #?(:clj (throw (Exception. "cond- must contain an even number of forms"))
+       :cljs nil)                                           ;; TODO
+    (c/let [else? (c/= (c/second (c/reverse args)) :else)
+          default-branch (if else?
+                           (c/last args)
+                           nil)
+          branches (if else?
+                     (c/drop-last (c/drop-last args))
+                     args)
+          branches (partition 2 branches)
+          branches (vec (c/map (c/fn [[case then]]
+                               {:case case :then then})
+                             branches))]
+      (if else?
+        {"$switch" {:branches branches :default default-branch}}
+        {"$switch" {:branches branches}}))))
+
+
+
+;;---------------------------Literal----------------------------------------
+;;--------------------------------------------------------------------------
+;;--------------------------------------------------------------------------
+
+(defn literal
+  "$literal
+  Used to show that it represents it self,without special MQL meaning.
+  Call
+  (literal- :a) => will mean a string '$a' not a field reference
+  {$project {:myfield {$literal 1}}} => adds :myfield with value 1"
+  [e]
+  {"$literal" e})
+
+;;---------------------------Types and Convert------------------------------
+;;--------------------------------------------------------------------------
+;;--------------------------------------------------------------------------
+
+
+(defn expr
+  "$expr
+  Converts an aggregate expression to a query expression
+  For example i can use aggregate operators in a match stage
+  Allows us to use aggregate operators instead of query operators"
+  [aggregation-e]
+  {"$expr" aggregation-e})
+
+(declare map fn)
+
+(defn into [into-type array-or-doc-e]
+  "$arrayToObject  (into- {} array-or-doc-e)
+   $objectToArray  (into- [] array-or-doc-e)
+  Convert object to array or array to object
+  Call
+  into {} => Array to document
+   Array must be in one of those 2 forms(when argument is array literal,
+   literal operation is auto-added,to not mixed like args)
+   1)[ [ key1, value1], [ key2, value2 ] ... ]
+   2)[ { 'k': key1, 'v': value1}, { 'k'': key2, 'v' : value2 } ... ]
+   here we say key=item value=abc123, key=qty valie=25\n
+   If key same name we take the value of the last
+
+  into [] => document to array
+   For each top level field of the document return key value pairs
+   For example
+   [{ 'k' : 'item', 'v' : 'foo' }, { 'k' : 'qty', 'v' : 25 } ...]"
+  (c/cond
+
+    (c/= into-type {})
+    {"$arrayToObject" (if (c/vector? array-or-doc-e)
+                        (literal array-or-doc-e)        ;;if i want vec arg not literal,i use a mongo variable in the call
+                        array-or-doc-e)}
+
+    (c/= into-type [{}])
+    {"$objectToArray" array-or-doc-e}
+
+    :else
+    (map
+      (fn
+        [:m.] [:m.k. :m.v.])
+      {"$objectToArray" array-or-doc-e})))
+
+(defn type
+  "$type
+  Returns a string representation of the argument type"
+  [e]
+  {"$type" e })
+
+(defn convert
+  "$convert
+  Converts an expression to the type i specify using the type
+  etype = double/string/objectId/bool/timestamp/date/int/long/decimal
+  I can use the string representation of type or the number
+  Call
+  (convert- 1.99999 'bool')
+  (convert- any-e 'bool' {:onError e1} {:onNull e2})  ;; optional"
+  [input-e e-type & args]
+  (c/merge (ordered-map "$convert" {:input input-e :to e-type}) (apply (partial c/merge {}) args)))
+
+(defn boolean
+  "$toBool"
+  [e]
+  {"$toBool" e})
+
+;;$toDate is implemented above on types
+
+(defn decimal
+  "$toDecimal"
+  [e]
+  {"$toDecimal" e})
+
+(defn double
+  "$toDouble"
+  [e]
+  {"$toDouble" e})
+
+(defn int
+  "$toInt"
+  [e]
+  {"$toInt" e})
+
+(defn long
+  "$toLong"
+  [e]
+  {"$toLong" e})
+
+(defn object-id
+  "$toObjectId"
+  [e]
+  {"$toObjectId" e})
+
+(defn string
+  "$toString"
+  [e]
+  {"$toString" e})
+
+(defn exists?
+  "$type
+  True if field exists (not=_ (type- e) 'missing')"
+  [e]
+  (not= (type e) "missing"))
+
+(defn not-exists?
+  "True if field missing (=_ (type- e) 'missing')"
+  [e]
+  (= (type e) "missing"))
+
+(defn nil? [e]
+  (= e nil))
+
+;;TODO replace not-value with shorter way 
+
+#_(defn if-nil
+  "$ifNull
+  Equivalent with (e nil or e not exist)
+  (if- (not-value?- e) nill-e e)"
+  [e nill-e]
+  {"$ifNull" [e nill-e]})
+
+#_(defn not-value [e]
+  {"$ifNull" [e true]})
+    
+(defn not-value? [e]
+  (or (= e nil)
+      (= (type e) "missing")))
+      
+
+
+(defn some?
+  "True if not nil"
+  [e]
+  (not= e nil))
+
+(defn value? [e]
+  (and (not= e nil)
+       (not= (type e) "missing")))
+
+(defn true? [e]
+  (= e true))
+
+(defn false? [e]
+  (= e false))
+
+(defn array?
+  "$isArray"
+  [e-array]
+  {"$isArray"  [e-array]})
+
+(defn object? [e]
+  (= (type e) "object"))
+
+(defn object-id? [e]
+  (= (type e) "objectId"))
+
+(defn regex? [e]
+  (= (type e) "regex"))
+
+(defn string? [e]
+  (= (type e) "string"))
+
+(defn int? [e]
+  (= (type e) "int"))
+
+(defn long? [e]
+  (= (type e) "long"))
+
+(defn decimal? [e]
+  (= (type e) "decimal"))
+
+(defn double? [e]
+  (= (type e) "double"))
+
+(defn boolean? [e]
+  (= (type e) "bool"))
+
+(defn date? [e]
+  (= (type e) "date"))
+
+(defn number? [e]
+  (or
+       (long? e)
+       (int? e)
+       (double? e)
+       (decimal? e)))
+
+(defn rand []
+  {"$rand" {}})
+
+;;---------------------------User Variables---------------------------------
+;;--------------------------------------------------------------------------
+;;--------------------------------------------------------------------------
+
+(defn leti
+  "$let
+  Not usefull,like let- but not allows dependent variables
+  Call
+  (leti- [:v1- e1 :v2- e2] e)"
+  [vars body]
+  (cmql-core.internal.convert.operators/leti vars body))
+
+(defn let
+  "$let
+  Allows depended variables => generate minimun nested mongo $let
+  Call
+  (let- [:x- 2
+         :y- 1
+         :z- (+_ :y- :x-)]
+    :z-)"
+  [vars body]
+  (c/let [lets (vec (c/reverse (get-lets vars)))
+        nested-lets (get-nested-lets lets body)]
+    nested-lets))
+
+
+;;---------------------------Arrays-----------------------------------------
+;;--------------------------------------------------------------------------
+;;--------------------------------------------------------------------------
+
+
+(declare concat subvec merge count conj reduce)
+
+;;---------------------------------Get/SET(arays/object and nested)-----------------------------------------------------
+
+;;WHEN I HAVE KEYS I CAN DO THE GET FAST var1=get 0 var2=var1.aggr
+
+(declare get)
+
+(defn- aget- [ar index]
+  (c/cond
+
+    (c/and (c/contains? index :icond) (c/contains? index :cond))
+    (c/let [icond (c/get index :icond)
+            gcond (c/get index :cond true)]
+      (let [:a. ar]
+           (if- gcond
+             (let [:foundIndex. (get (reduce
+                                       (fn [:d. :v.]
+                                           (let [:fi. (get :d. 0)
+                                                 :i. (get :d. 1)]
+                                                (if- icond
+                                                  [:i. (+ :i. 1)]
+                                                  [:fi. (+ :i. 1)])))
+                                       [nil 0]
+                                       :a.)
+                                     0)]
+                  {"$arrayElemAt" [:a. :foundIndex.]})
+             nil)))
+
+    (c/contains? index :icond)
+    (c/let [icond (c/get index :icond)]
+      (let [:a. ar]
+           (let [:foundIndex. (get (reduce
+                                     (fn [:d. :v.]
+                                         (let [:fi. (get :d. 0)
+                                               :i. (get :d. 1)]
+                                              (if- icond
+                                                [:i. (+ :i. 1)]
+                                                [:fi. (+ :i. 1)])))
+                                     [nil 0]
+                                     :a.)
+                                   0)]
+                {"$arrayElemAt" [:a. :foundIndex.]})))
+
+    (c/and (c/contains? index :index) (c/contains? index :cond))
+    (c/let [gcond (c/get index :cond true)]
+      (let [:a. ar]
+           (if- gcond
+             {"$arrayElemAt" [:a. (c/get index :index)]}
+             nil)))
+
+    :else
+    {"$arrayElemAt" [ar (c/get index :index)]}))
+
+
+(defn- oget- [doc k]
+  (c/cond
+
+    (c/and (c/contains? k :kcond) (c/contains? k :cond))
+    (c/let [kcond (c/get k :kcond)
+            gcond (c/get k :cond)]
+      (let [:o. doc]
+           (if- gcond
+             (reduce (fn [:p. :l.]
+                         (let [:k. (get :l. 0)
+                               :v. (get :l. 1)]
+                              (if- kcond
+                                (get :l. 1)
+                                :p.)))
+                     nil
+                     (into [] :o.))
+             nil)))
+
+    (c/contains? k :kcond)
+    (c/let [kcond (c/get k :kcond)]
+      (let [:o. doc]
+           (reduce (fn [:p. :l.]
+                       (let [:k. (get :l. 0)
+                             :v. (get :l. 1)]
+                            (if- kcond
+                              (get :l. 1)
+                              :p.)))
+                   nil
+                   (into [] :o.))))
+
+
+    (c/and (c/contains? k :key) (c/contains? k :cond))
+    (c/let [k-str-var (c/get k :key)
+            gcond (c/get k :cond)]
+      (let [:o. doc]
+            (if- gcond
+              (if (c/and (c/string? k-str-var) (c/not (clojure.string/starts-with? k-str-var "$")))
+                (keyword (c/str "o" "." k-str-var "."))                      ;; key is string constant(fast)
+                (reduce (fn [:v. :m.] (if- (= (get :m. 0) k-str-var) (get :m. 1) :v.)) ;; key is variable(slow)
+                        nil
+                        (into [] :o.)))
+              nil)))
+
+    :else                                                   ;;key is constant or variable no cond
+    (c/let [k-str-var (c/get k :key)]
+      (if (c/and (c/string? k-str-var) (c/not (clojure.string/starts-with? k-str-var "$")))
+        (let [:v0. doc] (keyword (c/str "v0" "." k-str-var ".")))                       ;; key is string constant(fast)
+        (reduce (fn [:v. :m.] (if- (= (get :m. 0) k-str-var) (get :m. 1) :v.))          ;; key is variable(slow)
+                nil
+                (into [] doc))))))
+
+(defn- index-to-map [index]
+  (c/cond
+    (c/map? index)
+    index
+
+    (c/number? index)
+    {:index index}
+
+    (c/and (c/string? index) (c/not (clojure.string/starts-with? index "$$")))
+    {:key index}))
+
+(defn get [array-or-doc index]
+  (c/let [index (index-to-map index)]
+    (if (c/or (c/contains? index :index) (c/contains? index :icond))
+      (aget- array-or-doc index)
+      (oget- array-or-doc index))))
+
+(defn get-in
+  [array-or-doc indexes]
+  (c/reduce (c/fn [get-expr index]
+              (get get-expr index))
+            (get array-or-doc (c/get indexes 0))
+            (c/rest indexes)))
+
+
+
+;;-------------------------------------------SET (arrays/objects and nested)--------------------------------------------
+
+(defn unset-field [doc field]
+  {"$unsetField" {:field (name field)
+                  :input doc}})
+  
+(defn set-field [doc field value]
+  {"$setField" {:field (name field)
+                :input doc
+                :value value}})
+                
+(defn get-field [doc field]
+  {
+   "$getField" {
+    "field" field,
+    "input" doc
+    }
+  })
+
+(declare merge filter take)
+
+;;i can add it as option on the assoc-in , to do conj-at
+(defn conj-at [ar index value]
+  (let [:a. ar
+         :i. index
+         :asize. (count ar)]
+        (if- (= :asize. :i.)
+             (conj :a. value)
+             (c/let [before-with-i (if- (> :i. 0)
+                                      (take 0 :i. :a.)
+                                      [])
+                   after (if- (< :i. :asize.)
+                              (take :i. :asize. :a.)
+                              [])]
+                  (concat before-with-i [value] after)))))
+
+(defn- assoc-array- [ar index value]
+  (let [:a. ar
+         :i. index
+         :asize. (count :a.)]
+        (cond
+
+          (> :i. :asize.)
+          nil
+
+          (= :i. :asize.)
+          (conj :a. value)
+
+          :else
+          (c/let [before (if- (> :i. 0)
+                            (take 0 :i. :a.)
+                            [])
+                after (if- (< :i. (- :asize. 1))
+                           (take (+ :i. 1) :asize. :a.)
+                           [])]
+               (concat before [value] after)))))
+
+(defn- dissoc-array- [ar index]
+  (let [:a. ar
+         :i. index
+         :asize. (count :a.)]
+        (cond
+
+          (>= :i. :asize.)
+          nil
+
+          :else
+          (c/let [before (if- (> :i. 0)
+                           (take 0 :i. :a.)
+                           [])
+                after (if- (< :i. (- :asize. 1))
+                        (take (+ :i. 1) :asize. :a.)
+                        [])]
+               (concat before after)))))
+
+(defn- aset- [ar index value]
+  (c/cond
+
+    (c/and (c/contains? index :icond) (c/contains? index :cond))
+    (c/let [icond (c/get index :icond)
+          gcond (c/get index :cond)]
+         (let [:a. ar
+               :asize. (count :a.)]
+               (if- gcond
+                    ;;TODO test with reduce and conj,all with 1 parse(bad)
+                    ;;TODO map and keep for each element if it was updated(better than below?)
+                    ;;reduce to true/false find if update happened
+                    ;;re-map to remove the extra true/false (3 parses of array)
+                    (let [:foundIndex. (get (reduce
+                                                (fn [:d. :v.]
+                                                     (let [:fi. (get :d. 0)
+                                                            :i. (get :d. 1)]
+                                                           (if- icond
+                                                                [:i. (+ :i. 1)]
+                                                                [:fi. (+ :i. 1)])))
+                                                [:asize. 0]
+                                                :a.)
+                                              0)]
+                          (if (c/= value :REMOVE.)
+                               (dissoc-array- :a. :foundIndex.)
+                               (assoc-array- :a. :foundIndex. value)))
+                    nil)))
+
+    (c/contains? index :icond)
+    (c/let [icond (c/get index :icond)]
+         (let [:a. ar
+               :asize. (count :a.)]
+               (let [:foundIndex. (get (reduce
+                                           (fn [:d. :v.]
+                                                (let [:fi. (get :d. 0)
+                                                      :i. (get :d. 1)]
+                                                      (if- icond
+                                                           [:i. (+ :i. 1)]
+                                                           [:fi. (+ :i. 1)])))
+                                           [:asize. 0]
+                                           :a.)
+                                         0)]
+                     (if (c/= value :REMOVE.)
+                         (dissoc-array- :a. :foundIndex.)
+                         (assoc-array- :a. :foundIndex. value)))))
+
+    (c/and (c/contains? index :index) (c/contains? index :cond))
+    (c/let [gcond (c/get index :cond)
+            index (c/get index :index)]
+         (let [:a. ar]
+               (if- gcond
+                    (if (c/= value :REMOVE.)
+                         (dissoc-array- :a. index)
+                         (assoc-array- :a. index value))
+                    nil)))
+
+    :else      ;;index no global cond
+    (c/let [index (c/get index :index)]
+         (if (c/= value :REMOVE.)
+           (dissoc-array- ar index)
+           (assoc-array- ar index value)))))
+
+
+(defn assoc-object- [doc key-e-string value-e]
+  (let [:pairArray. [[key-e-string value-e]]]
+        (merge doc (into {} :pairArray.))))
+
+(defn- dissoc-object- [doc key-e-string]
+  (if (c/and (c/string? key-e-string) (c/not (clojure.string/starts-with? key-e-string "$")))
+    (let [:o. doc]
+          (let [:existingKey. (exists? (keyword (c/str "o" "." key-e-string ".")))]
+                (if- :existingKey.
+                     (into {} (filter (fn [:m.]
+                                             (not= (get :m. 0) key-e-string))
+                                        (into [] :o.)))
+                     :o.)))
+    (into {} (filter (fn [:m.]
+                            (not= (get :m. 0) key-e-string))
+                       (into [] doc)))))
+
+(defn- oset- [doc k v]
+  (c/cond
+
+    (c/and (c/contains? k :kcond) (c/contains? k :cond))
+    (c/let [kcond (c/get k :kcond)
+          gcond (c/get k :cond)]
+         (let [:o. doc]
+               (if- gcond
+                    ;;TODO save into [] doc,concat the new pair and into {} (faster?)
+                    (let [:foundK. (reduce (fn [:p. :l.]
+                                                  (let [:k. (get :l. 0)
+                                                        :v. (get :l. 1)]
+                                                        (if- kcond
+                                                             (get :l. 0)
+                                                             :p.)))
+                                             nil
+                                             (into [] :o.))]
+                          (if- (nil? :foundK.)
+                               nil
+                               (if (c/= v :REMOVE.)
+                                 (dissoc-object- :o. :foundK.)
+                                 (assoc-object- :o. :foundK. v))))
+                    nil)))
+
+    (c/contains? k :kcond)
+    (c/let [kcond (c/get k :kcond)]
+         (let [:o. doc]
+               (let [:foundK. (reduce (fn [:p. :l.]
+                                             (let [:k. (get :l. 0)
+                                                   :v. (get :l. 1)]
+                                                   (if- kcond
+                                                        (get :l. 0)
+                                                        :p.)))
+                                        nil
+                                        (into [] :o.))]
+                     (if- (nil? :foundK.)
+                          nil
+                          (if (c/= v :REMOVE.)
+                            (dissoc-object- :o. :foundK.)
+                            (assoc-object- :o. :foundK. v))))))
+
+    (c/and (c/contains? k :key) (c/contains? k :cond))
+    (c/let [gcond (c/get k :cond)]
+         (let [:o. doc]
+               (if- gcond
+                    (if (c/= v :REMOVE.)
+                      (dissoc-object- :o. k)
+                      (assoc-object- :o. k v))
+                    nil)))
+
+    ;;key(string or expression) and no conditions
+    :else
+    (c/let [k (c/get k :key)]
+         (if (c/= v :REMOVE.)
+           (dissoc-object- doc k)
+           (let [:o. doc]
+                 (assoc-object- :o. k v))))))
+
+(defn assoc
+  "if the index/key is variable,i give it as {:key variable-e} or {:index variable-e}"
+  [array-or-doc index value]
+  (c/let [index (index-to-map index)]
+       (if (c/or (c/contains? index :index) (c/contains? index :icond))
+         (aset- array-or-doc index value)
+         (oset- array-or-doc index value))))
+
+;;TODO expand the value with function
+;;if icond/kcond if not found nil,else its assoc/dissoc
+(defn assoc-in [array-or-doc indexes value]
+  (if (c/= (c/count indexes) 1)
+    (assoc array-or-doc (c/get indexes 0) value)
+    (let [:arrayOrDoc. array-or-doc]
+          (let [:nested. (assoc-in (get :arrayOrDoc. (c/get indexes 0)) (c/subvec indexes 1) value)]
+                (if- (some? :nested.)
+                     (assoc :arrayOrDoc. (c/get indexes 0) :nested.)
+                     nil)))))
+
+(defn dissoc-in [array-or-doc indexes]
+  (assoc-in array-or-doc indexes :REMOVE.))
+
+(defn dissoc [array-or-doc index]
+  (dissoc-in array-or-doc [index]))
+
+(defn concat
+  "$concatArrays
+  Concatenates arrays to return the concatenated array.
+  If any of the argument is null returns null"
+  [& e-arrays]
+  {"$concatArrays" (vec e-arrays)})
+
+(defn conj
+  "Like $push but implemented with concat-
+  Not O(1) $push works only in group"
+  [e-array e]
+  (concat e-array [e]))
+
+(defn contains?
+  "$in
+  True is e is member(not index) of e-array"
+  [e-array e]
+  {"$in" [e e-array]})
+
+(defn index-of
+  "$indexOfArray
+  Returns the index of the matching member,or -1.
+  I can search in a range only,of the array, for example from index=5 to index=10"
+  ([e-array e start end]
+   {"$indexOfArray" [ e-array e start end]})
+  ([e-array e]
+   {"$indexOfArray" [ e-array e]})
+  ([e-array e start]
+   {"$indexOfArray" [ e-array e start]}))
+
+(defn range
+  "$range
+  Produces array of integers range(start end step)
+  step defaults to 1
+  start defaults to 0"
+  ([end-e-integer]
+   { "$range" [ 0 end-e-integer] })
+  ([start-e-integer end-e-integer ]
+   { "$range" [ start-e-integer end-e-integer] })
+  ([start-e-integer end-e-integer step-e-integer]
+   { "$range" [ start-e-integer end-e-integer step-e-integer ] }))
+
+(defn reverse
+  "$reverseArray
+  reverses an array,if null => null"
+  [e-array]
+  {"$reverseArray" e-array})
+
+(defn count
+  "$size"
+  [e-array]
+  {"$size" e-array})
+
+(defn take
+  "$slice
+  works like MQL slice,instead of indexes we give number of elements we want
+  but different argument order"
+  ([start-index n e-array]
+   { "$slice" [e-array start-index n]})
+  ([n e-array ]
+   { "$slice" [e-array n]}))
+
+(declare min)
+
+(defn subvec
+  "uses $slic but works like clojure subvec
+  Call
+  (subvec [1 2 3 4 5 6 7] 2 4)   = 3,4
+  Limit cases
+   start>count => empty array (slice do that alone)
+  Doesn't do circles if index>count,just takes till the end
+  cMQL's take works like slice,see take"
+  ([e-array start-e-n end-e-n]
+   (if- (= start-e-n end-e-n)
+        []
+        { "$slice" [e-array start-e-n (if- (<= end-e-n (count e-array))
+                                        (- end-e-n start-e-n)
+                                        (if- (>= start-e-n (count e-array))
+                                          1                                     ;;doesnt matter [] will return
+                                          (- (count e-array) start-e-n)))]}))
+  ([e-array start-e-n]
+   { "$slice" [e-array start-e-n (if- (>= start-e-n (count e-array))
+                                      1                                               ;;doesnt matter [] will return
+                                      (- (count e-array) start-e-n))]}))
+
+(defn ziparray
+  "$zip
+  Arguments are arrays.
+  [[firsts of all arrays] [seconds of all arays] ...]
+  if array not same sizes,the nth values dont added to result at all
+  if useLongestLength (default is false)
+    results = largest array size
+  else
+    results = smaller array size(if i dont have from not added in result)
+  If not useLongestLength i always have elements to add from all arrays.
+  If useLongestLength i give defaults,else defaults = [nil ...]
+  defaults = defaults must have the same size as the number of arrays
+  array that i take elements in order,to add to smaller arrays
+  Call
+  (ziparray- [a1 a2 a3] [b1 b2 b3] [c1 c2 c3])
+  =>
+  [[a1 b1 c1] [a2 b2 c2] [a3 b3 c3]
+  "
+  [& args]
+  (c/let [options (c/last args)
+        default? (c/and (c/map? options) (c/contains? options :defaults))
+        add-nil? (c/and default? (c/nil? (c/get options :defaults)))
+        add-defaults? (c/and default? (c/some? (c/get options :defaults)))
+        arrays (vec (if default? (c/drop-last args) args))]
+       (c/cond
+         add-nil?
+         {"$zip"  {:inputs arrays :useLongestLength true}}
+
+         add-defaults?
+         {
+          "$zip" {
+                  :inputs arrays
+                  :useLongestLength true
+                  :defaults (c/get options :defaults)
+                  }
+          }
+
+         :else
+         {"$zip" {:inputs arrays}})))
+
+(defn empty? [e-array]
+  (= e-array []))
+
+(defn not-empty? [e-array]
+  (not= e-array []))
+
+(defn conj-distinct
+  "Slow contains?- is not O(1)
+  If order not important,add get distinct after"
+  [e-array e]
+  (if- (contains? e-array e)
+       e-array
+       (conj e-array e)))
+
+;;---------------------------Arrays(set operations)-------------------------
+;;--------------------------------------------------------------------------
+;;--------------------------------------------------------------------------
+
+;; Those are set operations => duplicates are lost,and order is lost
+
+(defn all-true?
+  "$allElementsTrue"
+  [e-array]
+  {"$allElementsTrue" e-array})
+
+(defn any-true?
+  "$anyElementTrue"
+  [e-array]
+  {"$anyElementTrue"  e-array})
+
+(defn subset?
+  "$setIsSubset"
+  [subset-e-array1 e-array2]
+  {"$setIsSubset" [subset-e-array1 e-array2]})
+
+(defn =sets
+  "$setEquals"
+  [& args]
+  { "$setEquals"  (vec args)})
+
+(defn union
+  "$setUnion"
+  [& args]
+  { "$setUnion"  (vec args)})
+
+(defn intersection
+  "$setIntersection"
+  [& args]
+  { "$setIntersection"  (vec args)})
+
+(defn difference
+  "$setDifference"
+  [e-array1 e-array2]
+  {"$setDifference" [e-array1 e-array2]})
+
+(defn disjoint?
+  "No common"
+  [e-array1 e-array2]
+  (empty? (intersection e-array1 e-array2)))
+
+(defn not-disjoint?
+  "At least 1 common"
+  [e-array1 e-array2]
+  (not-empty? (intersection e-array1 e-array2)))
+
+;;---------------------------Arrays(map/filter/reduce)----------------------
+;;--------------------------------------------------------------------------
+;;--------------------------------------------------------------------------
+
+(defn fn
+  "fn- like Clojure fn
+  Used only in map/filter/reduce , only as argument
+  Call
+  (fn- [:avar.] ...)         ; map/filter 1 arg
+  (fn- [:avar. :bvar.] ...)  ; reduce 2 args
+  *if argument is :this. or :value. no let(reduce)
+   and not :as(filter/map) , is used.
+
+  Reduce example
+  (reduce (fn [:sum. :n.] (+ :sum. :n.)) [] :myarray)"
+  [args body]
+  (if (c/= (c/count args) 1)  ;;map or filter
+    ;; i wrap them in a special map to know its a fn- type map
+    {:mongo-fn [(vec (c/map cmql-var-name args)) (cmql-var-ref->mql-var-ref body)]}
+    ;;reduce
+    {:mongo-reduce-fn
+     (c/let [arguments []
+             arguments (if (c/not= (c/first args) :value.)
+                         (c/conj arguments (c/first args)  "$$value")
+                         arguments)
+             arguments (if (c/not= (c/second args) :this.)
+                         (c/conj arguments (c/second args)  "$$this")
+                         arguments)]
+       (if (c/empty? arguments)
+         body
+         (leti arguments body)))
+     }))
+
+(defn reduce
+  "$reduce
+  Call
+  (reduce- (fn [:sum. :n.] (+ :sum. :n.)) [] :myarray)"
+  [in-rfn init-e input-e-array]
+  {"$reduce" {
+              :input input-e-array
+              :initialValue init-e
+              :in (c/get in-rfn :mongo-reduce-fn)
+              }})
+
+(defn filter
+  "$filter
+  Call
+  (filter  (fn [:n.] (> :n. 0)) :myarray)"
+  [cond-fn e-array]
+  (c/let [argument (c/first (c/first (c/get cond-fn :mongo-fn)))
+          cond-value (c/second (c/get cond-fn :mongo-fn))
+          filter-arg {:input e-array :cond  cond-value} ]
+    (if (c/= argument "this")
+      {"$filter" filter-arg}
+      {"$filter" (c/assoc filter-arg :as argument)})))
+
+(defn map
+  "$map
+  Call
+  (map  (fn [:n.] (+ :n. 1)) :myarray)"
+  [map-fn e-array]
+  (c/let [argument (c/first (c/first (c/get map-fn :mongo-fn)))
+          in-value (c/second (c/get map-fn :mongo-fn))
+          map-arg {:input e-array :in  in-value} ]
+    (if (c/= argument "this")
+      {"$map" map-arg}
+      {"$map" (c/assoc map-arg :as argument)})))
+
+;;---------------------------Documents(some are mixed with arrays aboves)----------------------
+
+(defn bson-size [e-doc]
+  { "$bsonSize" e-doc })
+
+;;--------------------------Group operators used in $group ONLY---------------------------------
+;;group operators => argument = the group
+
+(defn first
+  "$first
+  Used only in $group
+  Take the first member of the group.
+  Only used at $group(in arrays i use (get- ar 0))
+  If data were sorted on the keys that i group by i take the smallest
+  else random"
+  [e-group]
+  {"$first" e-group})
+
+(defn last
+  "$last
+  Used only in $group
+  Take the last member of the group.
+  Only used at $group(in arrays i use (get- ar (-_ (count- ar) 1)))
+  If data were sorted on the keys that i group by i take the largest
+  else random"
+  [e-group]
+  {"$last" e-group})
+
+;;---------------------------Accumulators used in $group ONLY(they have 1 argument,the other is implied)---------------
+;;accumulators => argument = each member of the group
+;;those acculumators runs 1 time for each member of the group
+;;for example (conj-each- :myfield) will add all the :myfield values on the group
+;;i can use whatever expression or constant,constant is common to count the group size
+;;for example if group_size=5 , (conj-each 1) will make [1 1 1 1 1] for that groupid
+;;(sum- 1) will add 1 for each member of the group to make 5 => count group etc
+
+(defn conj-each
+  "$push
+  Used only in $group
+  Run 1 time/ member of the group
+  Adds the member at the end of the acc array"
+  [e]
+  {"$push" e})
+
+(defn conj-each-distinct
+  "$addToSet
+  Used only in $group
+  Run 1 time/ member of the group
+  Adds new member on the acc array only if not exists already"
+  [e]
+  {"$addToSet" e})
+
+
+;;---------------------------Accumulators used in --------------------------
+;$group
+;$match if inside {$expr ...}
+;$addFields=$set
+;$project=$unset
+;$replaceRoot=$replaceWith
+;;--------------------------------------------------------------------------
+
+(defn avg
+  "$avg
+  Can be used in
+  $group
+  $match if inside {$expr ...}
+  $addFields=$set
+  $project=$unset
+  $replaceRoot=$replaceWith
+  Ignores non numeric(doesnt count as members)
+  if all non-numeric returns null
+  Call
+  (avg- e) ; the array is made from group 1e/member
+  (avg- array)
+  (avg- number1 number2 ...)"
+  ([group-or-array-e]
+   {"$avg" group-or-array-e})
+  ([e1 e2 & es]
+   {"$avg" (apply (partial c/conj [e1 e2]) es)}))
+
+(defn sum
+  "$sum
+  Can be used in
+  $group
+  $match if inside {$expr ...}
+  $addFields=$set
+  $project=$unset
+  $replaceRoot=$replaceWith
+  Ignores non numeric,if all non-numeric returns 0
+  Call
+  (sum- e)   ; the array is made from group 1e/member
+  (sum- array)
+  (sum- number1 number2 ...)"
+  ([group-or-array-e]
+   {"$sum"  group-or-array-e})
+  ([e1 e2 & es]
+   {"$sum" (apply (partial c/conj [e1 e2]) es)}))
+
+(defn max
+  "$max
+  Can be used in
+  $group
+  $match if inside {$expr ...}
+  $addFields=$set
+  $project=$unset
+  $replaceRoot=$replaceWith
+  Compares(using $cmp) and returns the max
+  Call
+  (max- e)  ; the array is made from group 1e/member
+  (max- array)
+  (max- number1 number2 ...)"
+  ([group-or-array-e]
+   {"$max" group-or-array-e})
+  ([e1 e2 & es]
+   {"$max" (apply (partial c/conj [e1 e2]) es)}))
+
+(defn min
+  "$min
+  Can be used in
+  $group
+  $match if inside {$expr ...}
+  $addFields=$set
+  $project=$unset
+  $replaceRoot=$replaceWith
+  Compares(using $cmp) and returns the min
+  Call
+  (min- e)   ; the array is made from group 1e/member
+  (min- array)
+  (min- number1 number2 ...)"
+  ([group-or-array-e]
+   {"$min" group-or-array-e})
+  ([e1 e2 & es]
+   {"$min" (apply (partial c/conj [e1 e2]) es)}))
+
+(defn merge
+  "$mergeObjects"
+  ([group-or-array-e]
+   {"$mergeObjects" group-or-array-e})
+  ([e1 e2 & es]
+   {"$mergeObjects" (apply (partial c/conj [e1 e2]) es)}))
+
+;;TODO (statistical)
+(defn stdDevPop
+  "$stdDevPop"
+  ([group-or-array-e]
+   {"$stdDevPop" group-or-array-e})
+  ([e1 e2 & es]
+   {"$stdDevPop" (apply (partial c/conj [e1 e2]) es)}))
+
+;;TODO (statistical)
+(defn stdDevSamp
+  "$stdDevSamp"
+  ([group-or-array-e]
+   {"$stdDevSamp" group-or-array-e})
+  ([e1 e2 & es]
+   {"$stdDevSamp" (apply (partial c/conj [e1 e2]) es)}))
+
+
+;;---------------------------Strings----------------------------------------
+;;--------------------------------------------------------------------------
+;;--------------------------------------------------------------------------
+
+(defn str
+  "$concat
+  Concatenates any number of strings,if 1 or more null => null"
+  [& es-s]
+  {"$concat" (vec es-s)})
+
+(defn lower-case
+  "$toLower"
+  [e-s]
+  {"$toLower" e-s})
+
+(defn upper-case
+  "$toUpper"
+  [e-s]
+  {"$toUpper" e-s})
+
+(defn index-of-in-bytes
+  "$indexOfBytes
+  UTF-8 byte index of the first occurrence or -1"
+  ([e-s sub-e-s start end]
+   {"$indexOfBytes" [ e-s sub-e-s start end]})
+  ([e-s sub-e-s]
+   {"$indexOfBytes" [ e-s sub-e-s]})
+  ([e-s sub-e-s start]
+   {"$indexOfBytes" [ e-s sub-e-s start]}))
+
+(defn index-of-str
+  "$indexOfCP
+  UTF-8 code point index of the first occurrence or -1"
+  ([e-s sub-e-s start end]
+   {"$indexOfCP" [ e-s sub-e-s start end]})
+  ([e-s sub-e-s]
+   {"$indexOfCP" [ e-s sub-e-s]})
+  ([e-s sub-e-s start]
+   {"$indexOfCP" [ e-s sub-e-s start]}))
+
+(defn count-str
+  "$strLenCP"
+  [e-s]
+  {"$strLenCP" e-s })
+
+(defn count-str-bytes [e-s]
+  {"$strLenBytes" e-s })
+
+(defn subs
+  "$substrCP
+  Take the substring,starting from start to end UTF8 indexes
+  Counts in UTF-8 code points,negatives indexes are not allowed
+  Call like Clojure's subs
+  (subs s start)            ;; end=string size
+  (subs s start end)"
+  ([e-s start-e-n end-e-n]
+   (if (c/and (c/number? start-e-n) (c/number? end-e-n))
+     {"$substrCP" [ e-s  start-e-n (c/- end-e-n start-e-n)]}
+     ;;else do the - on server
+     {"$substrCP" [ e-s  start-e-n (- end-e-n start-e-n)]}))
+  ([e-s start-e-n]
+   (subs e-s start-e-n (count-str e-s))))
+   
+(defn take-str
+  "$substrCP
+  works like MQL substrCP, but different argument order"
+  ([start-index n e-str]
+   { "$substrCP" [e-str start-index n]})
+  ([n e-str ]
+   { "$substrCP" [e-str n]}))
+   
+
+
+(defn subs-bytes
+  "$substrBytes
+  Take the substring,starting from start to end BYTES indexes
+  Counts in BYTES,negatives indexes are not allowed
+  Call like Clojure's subs
+  (subs s start)     ;; end=string size
+  (subs s start end)"
+  [e-s start-e-n end-e-n]
+  (if (c/and (c/number? start-e-n)
+           (c/number? end-e-n))
+    (c/let [n (- end-e-n start-e-n)]
+         {"$substrBytes" [ e-s  start-e-n n]}
+         {"$substrBytes" [ e-s  start-e-n (- end-e-n start-e-n)]})))
+
+(defn split
+  "$split
+  splits on e2-string(no regex) returns array"
+  [e1-string e2-string]
+  {"$split" [ e1-string e2-string ]})
+
+
+(defn cmp-str-icase
+  "$strcasecmp
+  string equality ignore case"
+  [e1-string e2-string]
+  {"$strcasecmp" [e1-string e2-string]})
+
+(defn triml
+  "$ltrim
+  Deletes the characters ofr trim-e-string from the start
+  Character order in trim-e-string is ignored,its char1 or char2 ...
+  and i can have multiple matches.Stop deleting when no match.
+  for example  gggddeee ged  will reutrn '' delete all chars"
+  ([e-string]
+   {"$ltrim" { :input e-string}})
+  ([e-string trim-e-string]
+   {"$ltrim" { :input e-string :chars trim-e-string }}))
+
+(defn trimr
+  "$rtrim
+  Deletes the characters ofr trim-e-string from the end
+  Character order in trim-e-string is ignored,its char1 or char2 ...
+  and i can have multiple matches.Stop deleting when no match.
+  for example  gggddeee ged  will reutrn '' delete all chars"
+  ([e-string]
+   {"$rtrim" { :input e-string}})
+  ([e-string trim-e-string]
+   {"$rtrim" { :input e-string :chars trim-e-string }}))
+
+(defn trim
+  "$trim
+  Deletes the characters ofr trim-e-string from the end and from start
+  Character order in trim-e-string is ignored,its char1 or char2 ...
+  and i can have multiple matches.Stop deleting when no match.
+  for example  gggddeee ged  will reutrn '' delete all chars"
+  ([e-string]
+   {"$trim" { :input e-string}})
+  ([e-string trim-e-string]
+   {"$trim" { :input e-string :chars trim-e-string }}))
+
+;;---------------------------Strings(regex)---------------------------------
+;;--------------------------------------------------------------------------
+;;--------------------------------------------------------------------------
+
+;;TODO  check again monogo+clojure and mix it better
+
+;;MongoDB uses Perl compatible regular expressions (i.e. “PCRE” ) version 8.41 with UTF-8 support
+;; https://www.pcre.org
+;; http://www.rexegg.com/pcre-doc/08.40/pcresyntax.html
+;; https://www.debuggex.com/cheatsheet/regex/pcre
+;; https://mariadb.com/kb/en/pcre/
+
+(defn re-matcher
+  "$regexMatch"
+  ([pattern-expression string-s-expression options-s-expression]
+   {"$regexMatch" {
+                   "input"   string-s-expression
+                   "regex"   pattern-expression
+                   "options" options-s-expression
+                   }})
+  ([pattern-expression string-s-expression]
+   { "$regexMatch" {
+                    "input"   string-s-expression
+                    "regex"   pattern-expression
+                    }}))
+
+(defn re-find
+  "$regexFind"
+  ([pattern-expression string-s-expression options-s-expression]
+   { "$regexFind" {
+                   "input"   string-s-expression
+                   "regex"   pattern-expression
+                   "options" options-s-expression
+                   }})
+  ([pattern-expression string-s-expression]
+   { "$regexFind" {
+                   "input"   string-s-expression
+                   "regex"   pattern-expression
+                   }}))
+
+(defn re-seq
+  "$regexFindAll"
+  ([pattern-expression string-s-expression options-s-expression]
+   { "$regexFindAll" {
+                      "input"   string-s-expression
+                      "regex"   pattern-expression
+                      "options" options-s-expression
+                      }})
+  ([pattern-expression string-s-expression]
+   { "$regexFindAll" {
+                      "input"   string-s-expression
+                      "regex"   pattern-expression
+                      }}))
+
+(defn replace
+  "$replaceOne
+   match is string not pattern"
+  [s str-e replacement]
+  {"$replaceOne" { "input" s  "find" str-e "replacement" replacement } })
+
+(defn replace-all
+  "$replaceAll
+   match is string not pattern"
+  [s str-e replacement]
+  {"$replaceAll" { "input" s  "find" str-e "replacement" replacement } })
+
+;;---------------------------Dates------------------------------------------
+;;--------------------------------------------------------------------------
+;;--------------------------------------------------------------------------
+
+(defn date-add
+  "$dateAdd"
+  [op-map]
+  {"$dateAdd" op-map})
+
+(defn date-diff
+  "$dateDiff"
+  [op-map]
+  {"$dateDiff" op-map})
+
+(defn date-from-parts
+  "$dateFromParts"
+  [op-map]
+  {"$dateFromParts" op-map})
+
+(defn date-from-string
+  "$dateFromString"
+  [op-map]
+  {"$dateFromString" op-map})
+
+(defn date-subtract
+  "$dateSubtract"
+  [op-map]
+  {"$dateSubtract" op-map})
+
+(defn date-to-parts
+  "$dateToParts"
+  [op-map]
+  {"$dateToParts" op-map})
+
+(defn date-to-string [op-map]
+  "$dateToString"
+  {"$dateToString" op-map})
+
+(defn day-of-month [e-date]
+  {"$dayOfMonth" e-date })
+
+(defn day-of-week [e-date]
+  {"$dayOfWeek" e-date })
+
+(defn day-of-year [e-date]
+  {"$dayOfYear" e-date })
+
+(defn date-hour [e-date]
+  {"$hour" e-date })
+
+(defn iso-day-of-week [e-date]
+  {"isoDayOfWeek" e-date})
+
+(defn iso-week [e-date]
+  {"isoWeek" e-date})
+
+(defn iso-week-year [e-date]
+  {"isoWeekYear" e-date})
+
+(defn date-millisecond [e-date]
+  {"$millisecond" e-date })
+
+(defn date-minute [e-date]
+  {"$minute" e-date })
+
+(defn date-month [e-date]
+  {"$month" e-date })
+
+(defn date-second [e-date]
+  {"$second" e-date })
+
+(defn date [e]
+  {"$toDate" e})
+
+(defn date-week [e-date]
+  {"$week" e-date })
+
+(defn date-year [e-date]
+  {"$year" e-date })
+  
+(defn date-trunc [date-doc]
+  {"$dateTrunc" date-doc})
+
+;;-------------------------------------Cljs-compile---------------------------------------------------------------------
+
+(defn compile-functions
+  "Compiles one cljs to one javascript function with the same name.
+  The javascript function code,is saved in   js/f-name.js
+  The default location to look for js code"
+  [f-name & f-names]
+  (dorun (c/map (c/fn [f-name]
+                  (compile-library f-name))
+              (c/cons f-name f-names))))
+
+;;-------------------------------------js-operators---------------------------------------------------------------------
+
+#_(defn js [args & body-str-or-keyword]
+    (let [body (if (keyword? (first body-str-or-keyword))
+                 (get @js-fn-map (first body-str-or-keyword))
+                 (apply str (interpose " " body-str-or-keyword)))]
+         {
+          "$function" {
+                       :args args
+                       :lang "js"
+                       :body body
+                       }
+          }))
+
+
+
+(defn njs
+  "Makes many nested javascirpt calls,1 javascript function => 1 $function call
+  Its for optimization,and much faster.
+  In MongoDB n nested calls => n $function calls
+  Using njs it can be 1 $function call
+
+  Allows wrapping of js code,to make it look like MongoQL/Clojure code.
+  The 3 nested calls will be 1 $function call,and looks like normal aggregation operators.
+  (add 2 key-value pairs to a doc,and remove one)
+
+   (ejs (dissoc-j (assoc-j (assoc-j :mydoc 'e' 5) 'f' 6) 'f'))
+
+  After finishing with the nesting use ejs to execute the function.
+  Call
+    No wrapper,call it from query
+    (ejs (njs f-name f-args f-code))
+
+    Wrapper call it on wrapper defn (here on njs no code is given assumes js/assoc_j.js exists)
+     (defn assoc-j [doc k v]
+      (njs :assoc_j [doc k v]))
+
+    Use the wrapper in the query
+    (ejs (assoc-j :mydoc 'akey' 'avalue')
+  "
+  [f-name f-args & f-code]
+  (c/let [[args body] (js-args-body f-name f-args f-code)]
+       (js-info args body)))
+
+(defn ejs
+  "Execute the javascript code,calls $function operator
+  Used in 2 ways
+  execute nested js => 1 argument
+  execute code from file or argument => 2 or 3+ arguments
+
+  Call 1 argument
+
+  No wrappers 1 nested call (no need for njs use ejs with 3+ arguments directly)
+   (ejs (njs f-name f-args f-code))
+
+  No wrappers 2 nested call (hard to read,use wrappers instead)
+    (ejs :assoc_j
+         [(njs :assoc_j [:myobject 'akey' 'avalue']) ;; doc after first call (nested)
+         'akey1'
+         'avalue1'])
+
+  Wrappers (here all functions use njs on their body)(usefull for nested calls)
+  The prefered way,makes it look like regular MongoQL operator
+
+    (ejs (dissoc-j (assoc-j (assoc-j :mydoc 'e' 5) 'f' 6) 'f'))
+
+    assoc-j or dissoc-j wrapper uses njs
+    (defn assoc-cj [doc k v]
+      (njs :assoc_cj [doc k v]))
+
+  Call 2 arguments
+
+  Assumes that the js/fname.js already exists so no need for code
+  (ejs :assoc_j [:myobject 'akey' 'avalue']
+
+  Call 3+ arguments
+
+  If javascript saves the code in   js/fname.js
+  If Clojurescript compiles and saves the code in  js/fname.js
+  Then execute the code,with $function
+  (if code is given old-code is replaced if js/fname.js already existed)
+
+  fname(string/keyword),f-args vector,function-boy(each line can be 1 arg)
+
+  Javascript
+
+  (ejs :assoc_j
+       [:myobject 'akey' 'avalue']
+       'function assoc_j (a,k,v) {'
+       ' a[k]=v; return a;}')
+
+  ClojureScript
+
+  (ejs :assoc_cj
+       [:myobject 'akey' 'avalue']
+      '(defn assoc_cj [a k v]
+         (do (aset a k v) a)))
+  "
+  ([njs-code]
+   (c/let [args (c/get njs-code :args)
+         jsargs-v (c/get njs-code :jsargs-v)
+         bodies-str (clojure.string/join " " (c/get njs-code :bodies))
+         final-call (c/str "return " (c/get njs-code :call))
+         body (c/str "function " "(" (c/apply c/str (c/interpose "," jsargs-v)) ") "
+                   "{"
+                   bodies-str
+                   final-call ";"
+                   "}")]
+        {
+         "$function" {
+                      "args" args
+                      "body" body
+                      "lang" "js"
+                      }
+         }))
+  ([f-name f-args & f-code]
+   (c/let [[args body] (js-args-body f-name f-args f-code)]
+        {
+         "$function" {
+                      "args" args
+                      "body" body
+                      "lang" "js"
+                      }
+         })))
+
+
+(def operators-mappings
+  '[+ cmql-core.operators.operators/+
+    inc cmql-core.operators.operators/inc
+    - cmql-core.operators.operators/-
+    dec cmql-core.operators.operators/dec
+    * cmql-core.operators.operators/*
+    mod cmql-core.operators.operators/mod
+    = cmql-core.operators.operators/=
+    not= cmql-core.operators.operators/not=
+    > cmql-core.operators.operators/>
+    >= cmql-core.operators.operators/>=
+    < cmql-core.operators.operators/<
+    <= cmql-core.operators.operators/<=
+    and cmql-core.operators.operators/and
+    or cmql-core.operators.operators/or
+    not cmql-core.operators.operators/not
+    nor cmql-core.operators.operators/nor
+    if-not cmql-core.operators.operators/if-not
+    cond cmql-core.operators.operators/cond
+    into cmql-core.operators.operators/into
+    type cmql-core.operators.operators/type
+    boolean cmql-core.operators.operators/boolean
+    double cmql-core.operators.operators/double
+    int cmql-core.operators.operators/int
+    long cmql-core.operators.operators/long
+    string cmql-core.operators.operators/string
+    exists? cmql-core.operators.operators/exists?
+    nil? cmql-core.operators.operators/nil?
+    not-value? cmql-core.operators.operators/not-value?
+    some? cmql-core.operators.operators/some?
+    value? cmql-core.operators.operators/value?
+    true? cmql-core.operators.operators/true?
+    false? cmql-core.operators.operators/false?
+    array? cmql-core.operators.operators/array?
+    object? cmql-core.operators.operators/object?
+    regex? cmql-core.operators.operators/regex?
+    string? cmql-core.operators.operators/string?
+    int? cmql-core.operators.operators/int?
+    long? cmql-core.operators.operators/long?
+    decimal? cmql-core.operators.operators/decimal?
+    double? cmql-core.operators.operators/double?
+    boolean? cmql-core.operators.operators/boolean?
+    number? cmql-core.operators.operators/number?
+    rand cmql-core.operators.operators/rand
+    let cmql-core.operators.operators/let
+    get cmql-core.operators.operators/get
+    get-in cmql-core.operators.operators/get-in
+    assoc cmql-core.operators.operators/assoc
+    assoc-in cmql-core.operators.operators/assoc-in
+    dissoc  cmql-core.operators.operators/dissoc
+    dissoc-in  cmql-core.operators.operators/dissoc-in
+    concat cmql-core.operators.operators/concat
+    conj cmql-core.operators.operators/conj
+    contains? cmql-core.operators.operators/contains?
+    range cmql-core.operators.operators/range
+    reverse cmql-core.operators.operators/reverse
+    count cmql-core.operators.operators/count
+    take cmql-core.operators.operators/take
+    subvec cmql-core.operators.operators/subvec
+    empty? cmql-core.operators.operators/empty?
+    conj-distinct cmql-core.operators.operators/conj-distinct
+    fn cmql-core.operators.operators/fn
+    map cmql-core.operators.operators/map
+    filter cmql-core.operators.operators/filter
+    reduce cmql-core.operators.operators/reduce
+    bson-size cmql-core.operators.operators/bson-size
+    first cmql-core.operators.operators/first
+    last cmql-core.operators.operators/last
+    merge cmql-core.operators.operators/merge
+    max cmql-core.operators.operators/max
+    min cmql-core.operators.operators/min
+    str cmql-core.operators.operators/str
+    subs cmql-core.operators.operators/subs
+    take-str cmql-core.operators.operators/take-str
+    re-find cmql-core.operators.operators/re-find
+    re-matcher cmql-core.operators.operators/re-matcher
+    re-seq cmql-core.operators.operators/re-seq
+    replace cmql-core.operators.operators/replace
+    replace-all cmql-core.operators.operators/replace-all
+
+    ;;Not clojure overides
+
+    ;;query operators 
+    =- cmql-core.operators.operators/=-
+    >- cmql-core.operators.operators/>-
+    >=- cmql-core.operators.operators/>=-
+    <- cmql-core.operators.operators/<-
+    <=- cmql-core.operators.operators/<=-
+    not=- cmql-core.operators.operators/not=-
+    in cmql-core.operators.operators/in
+    nin cmql-core.operators.operators/nin
+    and- cmql-core.operators.operators/and-
+    nor- cmql-core.operators.operators/nor-
+    or- cmql-core.operators.operators/or-
+    not- cmql-core.operators.operators/not-
+    exists- cmql-core.operators.operators/exists-
+    not-exists- cmql-core.operators.operators/not-exists-
+    type- cmql-core.operators.operators/type-
+
+    abs cmql-core.operators.operators/abs
+    pow cmql-core.operators.operators/pow
+    exp cmql-core.operators.operators/exp
+    ln  cmql-core.operators.operators/ln
+    log cmql-core.operators.operators/log
+    ceil cmql-core.operators.operators/ceil
+    floor cmql-core.operators.operators/floor
+    round cmql-core.operators.operators/round
+    trunc cmql-core.operators.operators/trunc
+    sqrt cmql-core.operators.operators/sqrt
+    mod cmql-core.operators.operators/mod
+    div cmql-core.operators.operators/div
+    cmp cmql-core.operators.operators/cmp
+    if- cmql-core.operators.operators/if-
+    if-not-value cmql-core.operators.operators/if-not-value
+    literal cmql-core.operators.operators/literal
+    expr cmql-core.operators.operators/expr
+    convert cmql-core.operators.operators/convert
+    boolean cmql-core.operators.operators/boolean
+    date cmql-core.operators.operators/date
+    decimal cmql-core.operators.operators/decimal
+    object-id cmql-core.operators.operators/object-id
+    string cmql-core.operators.operators/string
+    exists? cmql-core.operators.operators/exists?
+    not-exists? cmql-core.operators.operators/not-exists?
+    array? cmql-core.operators.operators/array?
+    object? cmql-core.operators.operators/object?
+    object-id? cmql-core.operators.operators/object-id?
+    date? cmql-core.operators.operators/date?
+    leti cmql-core.operators.operators/leti
+    set-field cmql-core.operators.operators/set-field
+    get-field cmql-core.operators.operators/get-field
+    unset-field cmql-core.operators.operators/unset-field
+    conj-at cmql-core.operators.operators/conj-at
+    index-of cmql-core.operators.operators/index-of
+    ziparray cmql-core.operators.operators/ziparray
+    not-empty? cmql-core.operators.operators/not-empty?
+    conj-distinct cmql-core.operators.operators/conj-distinct
+    all-true? cmql-core.operators.operators/all-true?
+    any-true? cmql-core.operators.operators/any-true?
+    subset? cmql-core.operators.operators/subset?
+    =sets cmql-core.operators.operators/=sets
+    union cmql-core.operators.operators/union
+    intersection cmql-core.operators.operators/intersection
+    difference cmql-core.operators.operators/difference
+    disjoint? cmql-core.operators.operators/disjoint?
+    not-disjoint? cmql-core.operators.operators/not-disjoint?
+    bson-size cmql-core.operators.operators/bson-size
+    conj-each cmql-core.operators.operators/conj-each
+    conj-each-distinct cmql-core.operators.operators/conj-each-distinct
+    avg cmql-core.operators.operators/avg
+    sum cmql-core.operators.operators/sum
+    stdDevPop cmql-core.operators.operators/stdDevPop
+    stdDevSamp cmql-core.operators.operators/stdDevSamp
+    lower-case cmql-core.operators.operators/lower-case
+    upper-case cmql-core.operators.operators/upper-case
+    index-of-in-bytes cmql-core.operators.operators/index-of-in-bytes
+    index-of-str cmql-core.operators.operators/index-of-str
+    count-str cmql-core.operators.operators/count-str
+    count-str-bytes cmql-core.operators.operators/count-str-bytes
+    subs-bytes cmql-core.operators.operators/subs-bytes
+    split cmql-core.operators.operators/split
+    cmp-str-icase cmql-core.operators.operators/cmp-str-icase
+    triml cmql-core.operators.operators/triml
+    trimr cmql-core.operators.operators/trimr
+    trim cmql-core.operators.operators/trim
+    replace-all cmql-core.operators.operators/replace-all
+
+    ;;dates
+    date-add cmql-core.operators.operators/date-add
+    date-diff cmql-core.operators.operators/date-diff
+    date-from-parts cmql-core.operators.operators/date-from-parts
+    date-from-string cmql-core.operators.operators/date-from-string
+    date-subtract cmql-core.operators.operators/date-subtract
+    date-to-parts cmql-core.operators.operators/date-to-parts
+    date-to-string cmql-core.operators.operators/date-to-string
+    day-of-month cmql-core.operators.operators/day-of-month
+    day-of-week cmql-core.operators.operators/day-of-week
+    day-of-year cmql-core.operators.operators/day-of-year
+    iso-day-of-week cmql-core.operators.operators/iso-day-of-week
+    iso-week cmql-core.operators.operators/iso-week
+    iso-week-year cmql-core.operators.operators/iso-week-year
+    date-millisecond cmql-core.operators.operators/date-millisecond
+    date-second cmql-core.operators.operators/date-second
+    date-minute cmql-core.operators.operators/date-minute
+    date-hour cmql-core.operators.operators/date-hour
+    date-week cmql-core.operators.operators/date-week
+    date-month cmql-core.operators.operators/date-month
+    date-year cmql-core.operators.operators/date-year
+    date-trunc cmql-core.operators.operators/date-trunc
+
+    ;;javascript
+    njs cmql-core.operators.operators/njs
+    ejs cmql-core.operators.operators/ejs
+
+    ;;stages
+    pipeline cmql-core.operators.stages/pipeline
+    match cmql-core.operators.stages/match
+    limit cmql-core.operators.stages/limit
+    skip cmql-core.operators.stages/skip
+    redact cmql-core.operators.stages/redact
+    add cmql-core.operators.stages/add
+    set-s cmql-core.operators.stages/set-s
+    unset cmql-core.operators.stages/unset
+    facet cmql-core.operators.stages/facet
+    project cmql-core.operators.stages/project
+    unwind cmql-core.operators.stages/unwind
+    replace-root cmql-core.operators.stages/replace-root
+    replace-with cmql-core.operators.stages/replace-with
+    add-to-root cmql-core.operators.stages/add-to-root
+    move-to-root cmql-core.operators.stages/move-to-root
+    unwind-replace-root cmql-core.operators.stages/unwind-replace-root
+    unwind-add-to-root cmql-core.operators.stages/unwind-add-to-root
+    unwind-move-to-root cmql-core.operators.stages/unwind-move-to-root
+    group cmql-core.operators.stages/group
+    group-array cmql-core.operators.stages/group-array
+    reduce-array cmql-core.operators.stages/reduce-array
+    bucket cmql-core.operators.stages/bucket
+    bucket-auto cmql-core.operators.stages/bucket-auto
+    sort cmql-core.operators.stages/sort
+    group-count-sort cmql-core.operators.stages/group-count-sort
+    lookup cmql-core.operators.stages/lookup
+    lookup-p cmql-core.operators.stages/lookup-p
+    join cmql-core.operators.stages/join
+    graphlookup cmql-core.operators.stages/graphlookup
+    out cmql-core.operators.stages/out
+    if-match cmql-core.operators.stages/if-match
+    merge-s cmql-core.operators.stages/merge-s
+    union-s cmql-core.operators.stages/union-s
+    count-s cmql-core.operators.stages/count-s
+    group-count cmql-core.operators.stages/group-count
+    coll-stats-s cmql-core.operators.stages/coll-stats-s
+    current-op-s cmql-core.operators.stages/current-op-s
+    sample cmql-core.operators.stages/sample
+    list-local-sessions cmql-core.operators.stages/list-local-sessions
+    ])

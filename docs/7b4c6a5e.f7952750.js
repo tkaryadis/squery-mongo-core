@@ -1,0 +1,1 @@
+(window.webpackJsonp=window.webpackJsonp||[]).push([[28],{87:function(o){o.exports=JSON.parse('{"allTagsPath":"/cmql-core/blog/tags","slug":"facebook","name":"facebook","count":1,"permalink":"/cmql-core/blog/tags/facebook"}')}}]);

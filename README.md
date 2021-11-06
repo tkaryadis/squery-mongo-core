@@ -45,6 +45,10 @@ aggregate(
 - [cmql-j](https://github.com/tkaryadis/cmql-j) for Java and Clojure programmers
 - [cmql-js](https://github.com/tkaryadis/cmql-js) for NodeJS and Clojurescript programmers
 
+cmq-core is used from both cmql-j, cmql-js.
+Java and Clojure programmers use cmql-j.
+NodeJS and Clojurescript programmers use cmql-js.
+
 **cMQL example apps**
 
 - [Clojure](https://github.com/tkaryadis/cmql-app-clj)

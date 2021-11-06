@@ -13,6 +13,32 @@ It can be used as a tool to generate MQL or to call cMQL code directly.
 - [**Try it online, see many examples**](http://cmql.org/play)
 - [**cMQL chat server**](https://discord.gg/zWDzp4B7Bf)
 
+## Example
+
+```clojure
+(q (= :bedrooms 1)
+   (= :country.code "GR")
+   (group {:_id :stars}
+          {:average-price (avg :price)})
+   (sort :average-price)
+   (limit 1))
+```
+
+Generates
+
+```js
+aggregate(
+[{"$match":
+   {"$expr":
+     {"$and":
+       [{"$eq": ["$bedrooms", 1]},
+        {"$eq": ["$country.code", "GR"]}]}}},
+ {"$group": {"_id": "$stars",
+             "average-price": {"$avg": "$price"}}},
+ {"$sort": {"average-price": 1}},
+ {"$limit": 1}])
+```
+
 ## cMQL projects
 
 - [cmql-core](https://github.com/tkaryadis/cmql-core)
@@ -41,32 +67,6 @@ It can be used as a tool to generate MQL or to call cMQL code directly.
 ```
 [cmql/cmql-core "0.1.0-SNAPSHOT"]
 [cmql/cmql-js "0.1.0-SNAPSHOT"]
-```
-
-## Example
-
-```clojure
-(q (= :bedrooms 1)
-   (= :country.code "GR")
-   (group {:_id :stars}
-          {:average-price (avg :price)})
-   (sort :average-price)
-   (limit 1))
-```
-
-Generates
-
-```js
-aggregate(
-[{"$match":
-   {"$expr":
-     {"$and":
-       [{"$eq": ["$bedrooms", 1]},
-        {"$eq": ["$country.code", "GR"]}]}}},
- {"$group": {"_id": "$stars",
-             "average-price": {"$avg": "$price"}}},
- {"$sort": {"average-price": 1}},
- {"$limit": 1}])
 ```
 
 

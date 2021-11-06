@@ -73,6 +73,6 @@ aggregate(
 
 ## License
 
-Copyright © 2020,2021 Takis Karyadis.
+Copyright © 2020,2021 Takis Karyadis.  
 Distributed under the Eclipse Public License either version 1.0.
 

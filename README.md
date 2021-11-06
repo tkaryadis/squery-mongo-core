@@ -5,7 +5,7 @@
 - simple structure of code
 - simple notation
 
-**It can be used**
+It can be used
 
 - as tool to **generate MQL** usable from all drivers
 - to **call cMQL** code directly from Java/NodeJS/Clojure/Clojurescript

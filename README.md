@@ -42,11 +42,8 @@ aggregate(
 ## cMQL projects
 
 - [cmql-core](https://github.com/tkaryadis/cmql-core)
-- [cmql-j](https://github.com/tkaryadis/cmql-j)
-- [cmql-js](https://github.com/tkaryadis/cmql-js)
-
-Java and Clojure programmers use **cmql-j**.
-NodeJS and Clojurescript programmers use **cmql-js**.
+- [cmql-j](https://github.com/tkaryadis/cmql-j) for Java and Clojure programmers
+- [cmql-js](https://github.com/tkaryadis/cmql-js) for NodeJS and Clojurescript programmers
 
 **cMQL example apps**
 

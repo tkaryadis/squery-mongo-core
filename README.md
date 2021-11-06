@@ -5,7 +5,9 @@
 - simple structure of code
 - simple notation
 
-It can be used as a tool to **generate MQL** or to **call cMQL** code directly.
+It can be used
+- as tool to **generate MQL** usable from all languages
+- to **call cMQL** code directly usable from Java/NodeJS/Clojure/Clojurescript
 
 ## Getting Started
 

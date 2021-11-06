@@ -296,8 +296,8 @@
 
       rename?
       [{"$group" group-by-map}                         ;;group-by field/{:field ....}
-       (add {rename-field :_id})
-       [:!_id]]
+       (add {rename-field :_id
+             "_id" "$$REMOVE"})]
 
 
       remove?                                               ;;group-by nil

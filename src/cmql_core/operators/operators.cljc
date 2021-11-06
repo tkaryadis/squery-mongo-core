@@ -1359,6 +1359,9 @@
    {"$stdDevSamp" (apply (partial c/conj [e1 e2]) es)}))
 
 
+(defn count-a []
+  { "$count" {}})
+
 ;;---------------------------Strings----------------------------------------
 ;;--------------------------------------------------------------------------
 ;;--------------------------------------------------------------------------
@@ -1929,6 +1932,7 @@
     conj-each-distinct cmql-core.operators.operators/conj-each-distinct
     avg cmql-core.operators.operators/avg
     sum cmql-core.operators.operators/sum
+    count-a cmql-core.operators.operators/count-a
     stdDevPop cmql-core.operators.operators/stdDevPop
     stdDevSamp cmql-core.operators.operators/stdDevSamp
     lower-case cmql-core.operators.operators/lower-case

@@ -37,27 +37,57 @@ It can be used as a tool to generate MQL or to call cMQL code directly.
 ## Example
 
 ```clojure
-(q (= :bedrooms 1)
-   (= :country.code "GR")
-   (group {:_id :stars}
-          {:average-price (avg :price)})
-   (sort :average-price)
-   (limit 1))
+(q (< :salary 1000)
+   (> :years 1)
+   {:children (filter (fn [:child.] (< :child.age. 15)) :all-children)}
+   (>= :children 2)
+   {:bonus (reduce (fn [:total. :child.]
+                     (cond (< :child.age. 5) (+ :total. 100)
+                           (< :child.age. 10) (+ :total. 50)
+                           :else (+ :total. 20)))
+                   0
+                   :children)}
+   [:!id :name {:new-salary (+ :salary (if- (> :bonus 200) 200 :bonus))}]
+   (sort :!new-salary))
 ```
 
 Generates
 
 ```js
 aggregate(
-[{"$match": 
-   {"$expr": 
-     {"$and": 
-       [{"$eq": ["$bedrooms", 1]},
-        {"$eq": ["$country.code", "GR"]}]}}},
- {"$group": {"_id": "$stars",
-             "average-price": {"$avg": "$price"}}},
- {"$sort": {"average-price": 1}},
- {"$limit": 1}])
+[{"$match":
+   {"$expr":
+     {"$and": [{"$lt": ["$salary", 1000]}, {"$gt": ["$years", 1]}]}}},
+  {"$set":
+    {"children":
+      {"$filter":
+        {"input": "$all-children",
+          "cond": {"$lt": ["$$child.age", 15]},
+          "as": "child"}}}},
+  {"$match": {"$expr": {"$gte": ["$children", 2]}}},
+  {"$set":
+    {"bonus":
+      {"$reduce":
+        {"input": "$children",
+          "initialValue": 0,
+          "in":
+          {"$let":
+            {"vars": {"total": "$$value", "child": "$$this"},
+              "in":
+              {"$switch":
+                {"branches":
+                  [{"case": {"$lt": ["$$child.age", 5]},
+                    "then": {"$add": ["$$total", 100]}},
+                   {"case": {"$lt": ["$$child.age", 10]},
+                    "then": {"$add": ["$$total", 50]}}],
+                  "default": {"$add": ["$$total", 20]}}}}}}}}},
+  {"$project":
+    {"id": 0,
+      "name": 1,
+      "new-salary":
+      {"$add":
+        ["$salary", {"$cond": [{"$gt": ["$bonus", 200]}, 200, "$bonus"]}]}}},
+  {"$sort": {"new-salary": -1}}])
 ```
 
 

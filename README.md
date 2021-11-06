@@ -13,8 +13,8 @@
 
 It can be used as a tool to generate MQL or to call cMQL code directly.
 
-- [Documentation](http://cmql.org/)
-- [Try it online, see examples](http://cmql.org/play)
+- [**Documentation**](http://cmql.org/)
+- [**Try it online, see examples**](http://cmql.org/play)
 
 ### Java and JS drivers support  
 

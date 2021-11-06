@@ -13,18 +13,26 @@
 
 It can be used as a tool to generate MQL or to call cMQL code directly.
 
+### Getting Started
+
 - [**Documentation**](http://cmql.org/)
 - [**Try it online, see examples**](http://cmql.org/play)
 
-### Java and JS drivers support  
+### [Leiningen](http://github.com/technomancy/leiningen/) dependency information
 
-Java/Clojure
-- `[cmql/cmql-core "0.1.0-SNAPSHOT"]`  
-- `[cmql/cmql-j "0.1.0-SNAPSHOT"]`  
+**Java or Clojure programmers**
 
-JS/Clojurescript
-- `[cmql/cmql-core "0.1.0-SNAPSHOT"]`  
-- `[cmql/cmql-js "0.1.0-SNAPSHOT"]`  
+```
+[cmql/cmql-core "0.1.0-SNAPSHOT"]
+[cmql/cmql-j "0.1.0-SNAPSHOT"]
+```
+
+**JS or Clojurescript programmers**
+
+```
+[cmql/cmql-core "0.1.0-SNAPSHOT"]
+[cmql/cmql-js "0.1.0-SNAPSHOT"]
+```
 
 ### Example
 

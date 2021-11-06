@@ -1,4 +1,4 @@
-### cMQL
+## cMQL
 
 - query and data processing language for MongoDB
 - generates MQL that can be used as standalone commands, or as arguments in driver methods
@@ -13,12 +13,12 @@
 
 It can be used as a tool to generate MQL or to call cMQL code directly.
 
-### Getting Started
+## Getting Started
 
 - [**Documentation**](http://cmql.org/)
 - [**Try it online, see examples**](http://cmql.org/play)
 
-### [Leiningen](http://github.com/technomancy/leiningen/) dependency information
+## Leiningen dependencies
 
 **Java or Clojure programmers**
 
@@ -34,7 +34,7 @@ It can be used as a tool to generate MQL or to call cMQL code directly.
 [cmql/cmql-js "0.1.0-SNAPSHOT"]
 ```
 
-### Example
+## Example
 
 ```clojure
 (q (= :bedrooms 1)

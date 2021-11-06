@@ -2015,5 +2015,6 @@
     coll-stats-s cmql-core.operators.stages/coll-stats-s
     current-op-s cmql-core.operators.stages/current-op-s
     sample cmql-core.operators.stages/sample
+    wfields cmql-core.operators.stages/wfields
     list-local-sessions cmql-core.operators.stages/list-local-sessions
     ])

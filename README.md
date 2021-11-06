@@ -1,15 +1,9 @@
 ## cMQL
 
 - query and data processing language for MongoDB
-- generates MQL that can be used as standalone commands, or as arguments in driver methods
-- main characteristics
-  - up to **3x** less code
-  - simple structure of code
-  - simple notation
-- () for code , {} for data       
-  it is like MQL with ()
-- portable queries in both cmql-js and cmql-java      
-- with the same performance
+- up to **3x** less code
+- simple structure of code
+- simple notation
 
 It can be used as a tool to generate MQL or to call cMQL code directly.
 

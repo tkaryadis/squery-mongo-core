@@ -9,9 +9,9 @@ It can be used as a tool to **generate MQL** or to **call cMQL** code directly.
 
 ## Getting Started
 
-- [**Documentation**](http://cmql.org/)
 - [**Try it online, see many examples**](http://cmql.org/play)
-- [**cMQL chat server**](https://discord.gg/zWDzp4B7Bf)
+- [Documentation](http://cmql.org/)
+- [cMQL chat server](https://discord.gg/zWDzp4B7Bf)
 
 ## Example
 

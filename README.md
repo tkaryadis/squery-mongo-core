@@ -2,7 +2,7 @@
 
 - query and data processing language for MongoDB
 - up to **3x** less code
-- simple structure of code
+- simple structure
 - simple notation
 
 It can be used
@@ -57,14 +57,14 @@ aggregate(
 
 ## Leiningen dependencies
 
-**Java or Clojure programmers**
+**Java or Clojure programmers** use cmql-j
 
 ```
 [cmql/cmql-core "0.1.0-SNAPSHOT"]
 [cmql/cmql-j "0.1.0-SNAPSHOT"]
 ```
 
-**JS or Clojurescript programmers**
+**JS or Clojurescript programmers** use cmql-js
 
 ```
 [cmql/cmql-core "0.1.0-SNAPSHOT"]

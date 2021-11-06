@@ -10,7 +10,7 @@ It can be used as a tool to generate MQL or to call cMQL code directly.
 ## Getting Started
 
 - [**Documentation**](http://cmql.org/)
-- [**Try it online, see examples**](http://cmql.org/play)
+- [**Try it online, see more then 100 examples**](http://cmql.org/play)
 
 ## Leiningen dependencies
 

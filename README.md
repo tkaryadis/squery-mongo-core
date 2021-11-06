@@ -5,7 +5,7 @@
 - simple structure of code
 - simple notation
 
-It can be used as a tool to generate MQL or to call cMQL code directly.
+It can be used as a tool to **generate MQL** or to **call cMQL** code directly.
 
 ## Getting Started
 
@@ -45,6 +45,8 @@ aggregate(
 - [cmql-j](https://github.com/tkaryadis/cmql-j)
 - [cmql-js](https://github.com/tkaryadis/cmql-js)
 
+Java and Clojure programmers use **cmql-j**.
+NodeJS and Clojurescript programmers use **cmql-js**.
 
 **cMQL example apps**
 

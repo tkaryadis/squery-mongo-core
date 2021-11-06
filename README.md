@@ -71,4 +71,8 @@ aggregate(
 [cmql/cmql-js "0.1.0-SNAPSHOT"]
 ```
 
+## License
+
+Copyright © 2020,2021 Takis Karyadis.
+Distributed under the Eclipse Public License either version 1.0.
 

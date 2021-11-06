@@ -12,6 +12,23 @@ It can be used as a tool to generate MQL or to call cMQL code directly.
 - [**Documentation**](http://cmql.org/)
 - [**Try it online, see many examples**](http://cmql.org/play)
 
+## Questions, support
+
+- [cMQL chat server](https://discord.gg/zWDzp4B7Bf)
+
+## cMQL parts
+
+- [cmql-core](https://github.com/tkaryadis/cmql-core)
+- [cmql-j](https://github.com/tkaryadis/cmql-j)
+- [cmql-js](https://github.com/tkaryadis/cmql-js)
+
+## cMQL example apps
+
+- [Clojure](https://github.com/tkaryadis/cmql-app-clj)
+- [Java](https://github.com/tkaryadis/cmql-app-j)
+- [Clojurescript](https://github.com/tkaryadis/cmql-app-cljs)
+- [NodeJS](https://github.com/tkaryadis/cmql-app-js)
+
 ## Leiningen dependencies
 
 **Java or Clojure programmers**

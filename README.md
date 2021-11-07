@@ -44,9 +44,9 @@ aggregate(
 
 ## cMQL projects
 
-- [cmql-core](https://github.com/tkaryadis/cmql-core)
-- [cmql-j](https://github.com/tkaryadis/cmql-j)
-- [cmql-js](https://github.com/tkaryadis/cmql-js)
+- [org.cmql/cmql-core](https://github.com/tkaryadis/cmql-core)
+- [org.cmql/cmql-j](https://github.com/tkaryadis/cmql-j)
+- [org.cmql/cmql-js](https://github.com/tkaryadis/cmql-js)
 
 **cMQL example apps**
 
@@ -60,15 +60,15 @@ aggregate(
 **Java or Clojure programmers** use cmql-j
 
 ```
-[cmql/cmql-core "0.1.0-SNAPSHOT"]
-[cmql/cmql-j "0.1.0-SNAPSHOT"]
+[org.cmql/cmql-core "0.1.0-SNAPSHOT"]
+[org.cmql/cmql-j "0.1.0-SNAPSHOT"]
 ```
 
 **JS or Clojurescript programmers** use cmql-js
 
 ```
-[cmql/cmql-core "0.1.0-SNAPSHOT"]
-[cmql/cmql-js "0.1.0-SNAPSHOT"]
+[org.cmql/cmql-core "0.1.0-SNAPSHOT"]
+[org.cmql/cmql-js "0.1.0-SNAPSHOT"]
 ```
 
 ## License

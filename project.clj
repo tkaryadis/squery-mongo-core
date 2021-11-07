@@ -1,4 +1,4 @@
-(defproject cmql/cmql-core "0.1.0-SNAPSHOT"
+(defproject org.cmql/cmql-core "0.1.0-SNAPSHOT"
   :description "Query MongoDB with up to 3x less code (cmql-core, used from both cmql-j,cmql-js)"
   :url "https://github.com/tkaryadis/cmql-core"
   :license {:name "Eclipse Public License"

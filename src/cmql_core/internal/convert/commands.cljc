@@ -34,7 +34,7 @@
     "$geoNear" "$graphLookup" "$group" "$indexStats" "$limit" "$listLocalSessions"
     "$listSessions" "$lookup" "$match" "$merge" "$out" "$planCacheStats" "$project" "$redact"
     "$replaceRoot" "$replaceWith" "$sample" "$set" "$skip" "$sort" "$sortByCount"
-    "$unionWith" "$unset" "$unwind"})
+    "$unionWith" "$unset" "$unwind" "$setWindowFields"})
 
 (defn stage-operator? [stage]
   (and (map? stage)

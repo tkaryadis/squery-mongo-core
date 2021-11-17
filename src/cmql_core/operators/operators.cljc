@@ -1367,6 +1367,9 @@
 (defn rank []
   { "$rank" {}})
 
+(defn dense-rank []
+  { "$denseRank" {}})
+
 ;;---------------------------Strings----------------------------------------
 ;;--------------------------------------------------------------------------
 ;;--------------------------------------------------------------------------
@@ -1939,6 +1942,7 @@
     sum cmql-core.operators.operators/sum
     count-a cmql-core.operators.operators/count-a
     rank cmql-core.operators.operators/rank
+    dense-rank cmql-core.operators.operators/dense-rank
     stdDevPop cmql-core.operators.operators/stdDevPop
     stdDevSamp cmql-core.operators.operators/stdDevSamp
     lower-case cmql-core.operators.operators/lower-case

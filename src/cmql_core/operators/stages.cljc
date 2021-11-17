@@ -373,8 +373,9 @@
         (let [arg (first args)
               w-op-options #{"documents" "range" "unit" :documents :range :unit}
               [output-field window-op] (first (filter (fn [pair] (not (contains? w-op-options (first pair)))) (into [] arg)))
-              arg (dissoc arg output-field)]
-          (recur (assoc-in output [:output output-field] (merge window-op {:window arg}))
+              arg (dissoc arg output-field)
+              window-map (if (empty? arg) {} {:window arg})]
+          (recur (assoc-in output [:output output-field] (merge window-op window-map))
                  (rest args)))))))
 
 

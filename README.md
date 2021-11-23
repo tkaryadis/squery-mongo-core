@@ -12,8 +12,8 @@ Usage
 
 ## Getting Started
 
-- [Documentation](http://cmql.org/)
-- [**Try it online, see many examples**](http://cmql.org/play)
+- [Documentation](https://cmql.org/)
+- [**Try it online, see many examples**](https://cmql.org/play)
 - [cMQL chat server](https://discord.gg/zWDzp4B7Bf)
 
 ## Example

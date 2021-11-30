@@ -383,9 +383,7 @@
   (c/cond
 
     (c/= into-type {})
-    {"$arrayToObject" (if (c/vector? array-or-doc-e)
-                        (literal array-or-doc-e)        ;;if i want vec arg not literal,i use a mongo variable in the call
-                        array-or-doc-e)}
+    {"$arrayToObject" [array-or-doc-e]}
 
     (c/= into-type [{}])
     {"$objectToArray" array-or-doc-e}
@@ -393,7 +391,7 @@
     :else
     (map
       (fn
-        [:m.] [:m.k. :m.v.])
+        [:this.] [:this.k. :this.v.])
       {"$objectToArray" array-or-doc-e})))
 
 (defn type

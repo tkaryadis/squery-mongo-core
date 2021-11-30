@@ -364,22 +364,19 @@
 (declare map fn)
 
 (defn into [into-type array-or-doc-e]
-  "$arrayToObject  (into- {} array-or-doc-e)
-   $objectToArray  (into- [] array-or-doc-e)
+  "$arrayToObject  (into {} array-or-doc-e)
+   $objectToArray  (into [] array-or-doc-e)
   Convert object to array or array to object
   Call
   into {} => Array to document
-   Array must be in one of those 2 forms(when argument is array literal,
-   literal operation is auto-added,to not mixed like args)
-   1)[ [ key1, value1], [ key2, value2 ] ... ]
-   2)[ { 'k': key1, 'v': value1}, { 'k'': key2, 'v' : value2 } ... ]
-   here we say key=item value=abc123, key=qty valie=25\n
-   If key same name we take the value of the last
-
-  into [] => document to array
-   For each top level field of the document return key value pairs
-   For example
-   [{ 'k' : 'item', 'v' : 'foo' }, { 'k' : 'qty', 'v' : 25 } ...]"
+             Array can be in
+               [[k1 v1] [k2 v2] ...]
+               [{:k k1 :v v1} {:k k2 :v v2} ...]
+    If key same name takes the value of the last(like MQL)
+  into [{}] => Object to array with object members
+               [{:k k1 :v v1} {:k k2 :v v2} ...]
+  into []   => Object to array with array members
+               [[k1 v1] [k2 v2] ...]  (clojure-like)"
   (c/cond
 
     (c/= into-type {})

@@ -570,11 +570,11 @@
   The joined fields can be an array, in this case we get an array with the joined. (like join each member)
   Call
   (lookip :a :coll2.e :joined) ; join if :a==:e"
-  [localfield foreign-table-field join-result-field]
-  (let [[table foreignfield] (clojure.string/split (name foreign-table-field) #"\.")]
-    {"$lookup" {:from         table
-                :localField   (name localfield)
-                :foreignField foreignfield
+  [this-field other-coll-field-path join-result-field]
+  (let [[other-coll other-field-path] (split-db-namespace other-coll-field-path)]
+    {"$lookup" {:from         other-coll
+                :localField   (name this-field)
+                :foreignField other-field-path
                 :as           (name join-result-field)}}))
 
 (defn lookup-p
@@ -589,22 +589,28 @@
   Using variables and coll2 references i make complex join creteria
   and withe the pipeline i can make the joined docs to have any shape
   Call
-  (lookup :coll2
-          [:v1- :afield ...] ; optional
-          [stage1
-           stage2]
-          :joined)"
-  ([foreign-coll-name let-vars pipeline join-result-field]
-   (let [m  {:from (name foreign-coll-name)                                          ;(second (split-db-namespace foreign-db-namespace))
-             :let (let-cmql-vars->map let-vars)
-             :pipeline (cmql-pipeline->mql-pipeline pipeline)
-             :as (name join-result-field)}]
-     {"$lookup" m}))
-  ([foreign-coll-name pipeline join-result-field]
-   (let [m {:from  (name foreign-coll-name)                                         ;(second  (split-db-namespace foreign-db-namespace))
-            :pipeline (cmql-pipeline->mql-pipeline pipeline)
-            :as (name join-result-field)}]
-     {"$lookup" m})))
+  (lookup-p :coll2 or [this-field :coll2.other-field-path]
+            [:v1- :afield ...] ; optional
+            [stage1
+             stage2]
+            :joined)"
+  ([join-info let-vars pipeline join-result-field]
+   (if-not (coll? join-info)
+     (let [m {:from (name join-info)
+              :pipeline (cmql-pipeline->mql-pipeline pipeline)
+              :as (name join-result-field)}]
+       {"$lookup" (if let-vars (assoc m :let (let-cmql-vars->map let-vars)))})
+     (let [this-field (name (first join-info))
+           other-coll-field-path (name (second join-info))
+           [other-coll other-field-path] (split-db-namespace other-coll-field-path)
+           m {:from other-coll
+              :localField   this-field
+              :foreignField other-field-path
+              :pipeline (cmql-pipeline->mql-pipeline pipeline)
+              :as (name join-result-field)}]
+       {"$lookup" (if let-vars (assoc m :let (let-cmql-vars->map let-vars)))})))
+  ([join-info pipeline join-result-field]
+   (lookup-p join-info nil pipeline join-result-field)))
 
 (defn join
   "$sql_join

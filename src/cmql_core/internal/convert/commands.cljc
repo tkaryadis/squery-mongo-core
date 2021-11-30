@@ -306,6 +306,7 @@
 
 ;;----------------------------db-namespaces--------------------------------------------------------------------
 
+;;TODO in case db name has .  doesnt work
 (defn split-db-namespace
   "Arguments can be
    :db-name.coll-name
@@ -315,8 +316,8 @@
    "
   [db-namespace]
   (let [seperator (if (clojure.string/includes? (name db-namespace) "/") #"/" #"\.")
-        [db-name coll-name] (clojure.string/split (name db-namespace) seperator)
+        parts (clojure.string/split (name db-namespace) seperator)
+        db-name (first parts)
+        coll-name (clojure.string/join "." (rest parts))
         db-name (if (= db-name "") nil db-name)]
     [db-name coll-name]))
-
-      

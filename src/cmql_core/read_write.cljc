@@ -502,7 +502,6 @@
      :command-head command-head
      :command-body command-body}))
 
-
 ;;no count implementation,if count needed,add (count-documents) "stage" at
 ;;the pipeline its implemented as  (this works on sharded clusters,transactions also)
 ;;its like the shell command count-documents,but here like extra stage only

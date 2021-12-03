@@ -1585,8 +1585,10 @@
 
 (defn date-from-string
   "$dateFromString"
-  [op-map]
-  {"$dateFromString" op-map})
+  ([str-or-map]
+   (if (string? str-or-map)
+     {"$dateFromString" {:dateString str-or-map}}
+     {"$dateFromString" str-or-map})))
 
 (defn date-subtract
   "$dateSubtract"

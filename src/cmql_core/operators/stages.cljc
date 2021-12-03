@@ -179,10 +179,12 @@
    unwind to itself(1 document) if {:preserveNullAndEmptyArrays: true}
    2)null/empty array/missing field"
   [field-reference & options]
-  (let [;;includeArrayIndex preserveNullAndEmptyArrays
+  (if (empty? options)
+    {"$unwind" field-reference}
+    (let [;;includeArrayIndex preserveNullAndEmptyArrays
         unwind-map (conj options {:path field-reference})
         unwind-map (apply (partial merge {}) unwind-map)]
-    {"$unwind" unwind-map}))
+      {"$unwind" unwind-map})))
 
 ;;-------------------------------------------root-----------------------------------------------------------------------
 ;;----------------------------------------------------------------------------------------------------------------------

@@ -2011,6 +2011,8 @@
     sort cmql-core.operators.stages/sort
     group-count-sort cmql-core.operators.stages/group-count-sort
     lookup cmql-core.operators.stages/lookup
+    plookup cmql-core.operators.stages/plookup
+    glookup cmql-core.operators.stages/glookup
     lookup-p cmql-core.operators.stages/lookup-p
     join cmql-core.operators.stages/join
     graphlookup cmql-core.operators.stages/graphlookup

@@ -2015,7 +2015,6 @@
     glookup cmql-core.operators.stages/glookup
     lookup-p cmql-core.operators.stages/lookup-p
     join cmql-core.operators.stages/join
-    graphlookup cmql-core.operators.stages/graphlookup
     out cmql-core.operators.stages/out
     if-match cmql-core.operators.stages/if-match
     merge-s cmql-core.operators.stages/merge-s

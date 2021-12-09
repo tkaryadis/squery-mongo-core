@@ -654,11 +654,19 @@
       (unwind-move-to-root :joined__)])))
 
 
-(defn glookup [coll-name startWith from to result-field & args]
+(defn glookup
+  "Recursive lookups inside the 'from' collection.
+   Start with a field from the document in the pipeline.
+   And do recursive lookups.
+   Optional field=
+     maxDepth(max recursion, 0 means single lookup)
+     depthField(keep the current depth in a field like unwind keep index option)
+     restrictSearchWithMatch => filter with query operators, to allow or not the lookup"
+  [coll-name start from to result-field & args]
   (let [options-map (apply (partial merge {}) args)
         graph-map  {
                     "from" (name coll-name)
-                    "startWith"  startWith
+                    "startWith"  start
                     "connectFromField" (name from)
                     "connectToField" (name to)
                     "as"  (name result-field)}]

@@ -614,6 +614,29 @@
   ([join-info pipeline join-result-field]
    (lookup-p join-info nil pipeline join-result-field)))
 
+(defn plookup
+  "$lookup
+  Alias of lookup-p , will replace lookup-p in next version.
+  lookup with pipeline to allow more join creteria(not just equality on 2 field)
+  also the pipeline allows the joined doc to have any shape (not just merge)
+  Returns like lookup
+  {'a' 'b' 'c' 'd' :joined [joined_doc1 joined_doc2 ...]}
+  :joined is an array with the result of the pipeline
+  inside the pipeline references refer to the right doc
+  to refer to the left doc from pipeline use variables
+  Using variables and coll2 references i make complex join creteria
+  and withe the pipeline i can make the joined docs to have any shape
+  Call
+  (plookup  :coll2 or [this-field :coll2.other-field-path]
+            [:v1- :afield ...] ; optional
+            [stage1
+             stage2]
+            :joined)"
+  ([join-info let-vars pipeline join-result-field]
+   (lookup-p join-info let-vars pipeline join-result-field))
+  ([join-info pipeline join-result-field]
+   (lookup-p join-info nil pipeline join-result-field)))
+
 (defn join
   "$sql_join
   Like sql join,join when equal on field,replace left document with
@@ -631,27 +654,15 @@
       (unwind-move-to-root :joined__)])))
 
 
-(defn graphlookup [collection
-                   startWith
-                   connectFromField
-                   connectToField
-                   as
-                   maxDepth
-                   depthField
-                   restrictSearchWithMatch]
-  {
-   "$graphLookup"
-{
-    "from" collection
-    "startWith"  startWith   ;;expression
-    "connectFromField" connectFromField   ;;string
-    "connectToField" connectToField       ;;string
-    "as"  as  ;;string
-    "maxDepth" maxDepth     ;;number
-    "depthField" depthField ;;string
-    "restrictSearchWithMatch" restrictSearchWithMatch       ;;doc
-    }
-   })
+(defn glookup [coll-name startWith from to result-field & args]
+  (let [options-map (apply (partial merge {}) args)
+        graph-map  {
+                    "from" (name coll-name)
+                    "startWith"  startWith
+                    "connectFromField" (name from)
+                    "connectToField" (name to)
+                    "as"  (name result-field)}]
+    {"$graphLookup" (merge graph-map options-map)}))
 
 
 

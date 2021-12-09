@@ -1303,6 +1303,7 @@
   $project=$unset
   $replaceRoot=$replaceWith
   Compares(using $cmp) and returns the max
+  With 1 argument its always group or array, else >1 argument
   Call
   (max- e)  ; the array is made from group 1e/member
   (max- array)

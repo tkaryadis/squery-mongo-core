@@ -579,44 +579,8 @@
                 :foreignField other-field-path
                 :as           (name join-result-field)}}))
 
-(defn lookup-p
-  "$lookup
-  lookup with pipeline to allow more join creteria(not just equality on 2 field)
-  also the pipeline allows the joined doc to have any shape (not just merge)
-  Returns like lookup
-  {'a' 'b' 'c' 'd' :joined [joined_doc1 joined_doc2 ...]}
-  :joined is an array with the result of the pipeline
-  inside the pipeline references refer to the right doc
-  to refer to the left doc from pipeline use variables
-  Using variables and coll2 references i make complex join creteria
-  and withe the pipeline i can make the joined docs to have any shape
-  Call
-  (lookup-p :coll2 or [this-field :coll2.other-field-path]
-            [:v1- :afield ...] ; optional
-            [stage1
-             stage2]
-            :joined)"
-  ([join-info let-vars pipeline join-result-field]
-   (if-not (coll? join-info)
-     (let [m {:from (name join-info)
-              :pipeline (cmql-pipeline->mql-pipeline pipeline)
-              :as (name join-result-field)}]
-       {"$lookup" (if let-vars (assoc m :let (let-cmql-vars->map let-vars)))})
-     (let [this-field (name (first join-info))
-           other-coll-field-path (name (second join-info))
-           [other-coll other-field-path] (split-db-namespace other-coll-field-path)
-           m {:from other-coll
-              :localField   this-field
-              :foreignField other-field-path
-              :pipeline (cmql-pipeline->mql-pipeline pipeline)
-              :as (name join-result-field)}]
-       {"$lookup" (if let-vars (assoc m :let (let-cmql-vars->map let-vars)))})))
-  ([join-info pipeline join-result-field]
-   (lookup-p join-info nil pipeline join-result-field)))
-
 (defn plookup
   "$lookup
-  Alias of lookup-p , will replace lookup-p in next version.
   lookup with pipeline to allow more join creteria(not just equality on 2 field)
   also the pipeline allows the joined doc to have any shape (not just merge)
   Returns like lookup
@@ -633,9 +597,29 @@
              stage2]
             :joined)"
   ([join-info let-vars pipeline join-result-field]
-   (lookup-p join-info let-vars pipeline join-result-field))
+   (if-not (coll? join-info)
+     (let [m {:from (name join-info)
+              :pipeline (cmql-pipeline->mql-pipeline pipeline)
+              :as (name join-result-field)}]
+       {"$lookup" (if let-vars (assoc m :let (let-cmql-vars->map let-vars)) m)})
+     (let [this-field (name (first join-info))
+           other-coll-field-path (name (second join-info))
+           [other-coll other-field-path] (split-db-namespace other-coll-field-path)
+           m {:from other-coll
+              :localField   this-field
+              :foreignField other-field-path
+              :pipeline (cmql-pipeline->mql-pipeline pipeline)
+              :as (name join-result-field)}]
+       {"$lookup" (if let-vars (assoc m :let (let-cmql-vars->map let-vars)) m)})))
   ([join-info pipeline join-result-field]
    (lookup-p join-info nil pipeline join-result-field)))
+
+(defn lookup-p
+  "alias of plookup [deprecated]"
+  ([join-info let-vars pipeline join-result-field]
+   (plookup join-info let-vars pipeline join-result-field))
+  ([join-info pipeline join-result-field]
+   (plookup join-info nil pipeline join-result-field)))
 
 (defn join
   "$sql_join

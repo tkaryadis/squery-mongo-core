@@ -309,56 +309,38 @@
       :else
       {"$group" group-by-map})))
 
-;;{
-;   $setWindowFields: {
-;      partitionBy: <expression>,   ;;optional , if missing => all collection 1 group
-;      sortBy: {                 ;;required if Rank and order window operators.Bounded windows (either a documents window or a range window).
-;         <sort field 1>: <sort order>,
-;         <sort field 2>: <sort order>,
-;         ...,
-;         <sort field n>: <sort order>
-;      },
-;      output: {  ;;Required , Specifies the field(s) to append to the documents
-;         <output field 1>: {   ;;the field i want to add
-;            <window operator>: <window operator parameters>,  ;;the accumulator on the group, or { $rank: { } } or ?
-;            window: {
-                ;;window operator works in those boundaries (for example $sum from "unbounded"(first doc of group) to current)
+(defn wfields
+  "$setWindowFields
+  The 'current' string for the current document position in the output.
+  The 'unbounded' string for the first or last document position in the partition.
+  An integer for a position relative to the current document. Use a negative integer for a position before the current document.
+  Use a positive integer for a position after the current document. 0 is the current document position.
 
-;               documents: [ <lower boundary>, <upper boundary> ],
-                ;;
-;               range: [ <lower boundary>, <upper boundary> ],
-;               unit: <time unit>
-;            }
-;         },
-;         <output field 2>: { ... },
-;         ...
-;         <output field n>: { ... }
-;      }
-;   }
-;}
+  its like $set but adds to each document the result of a group (if missing all collection 1 group)
+  (in past we could do similar thing with group and unwind after)
+  sort optionally inside the group
+  output = the fields to append
+  window operator = the accumulator on the group, or { $rank: { } } etc
+    documents (based on sort order)
+    ['unbounded','current'] (accumulator from first of group since the current cdocument)
+    [-1 0] means current and previous document only
+  range (based on value of the field, like range -10 +10 days)
+    again unbount/current or numbers
+    range can take a unit also
 
-;;The "current" string for the current document position in the output.
-;The "unbounded" string for the first or last document position in the partition.
-;An integer for a position relative to the current document. Use a negative integer for a position before the current document.
-; Use a positive integer for a position after the current document. 0 is the current document position.
-
-;; its like $set but adds to each document the result of a group (if missing all collection 1 group)
-;;   (in past we could do similar thing with group and unwind after)
-;; sort optionally inside the group
-;; output = the fields to append
-;; window operator = the accumulator on the group, or { $rank: { } } or ?
-;; documents (based on sort order)
-;;   ["unbounded","current"] (accumulator from first of group since the current cdocument)
-;;   [-1 0] means current and previous document only
-;; range (based on value of the field, like range -10 +10 days)
-;;   again unbount/current or numbers
-;;   range can take a unit also
-
-
-(defn wfields [& args]
+  Call example
+  (wfields :state   //partition
+           (sort :orderDate)    ;;if in q enviroment no need for namespace
+           {:cumulativeQuantityForState (sum :quantity)
+            :documents [\"unbounded\" \"current\"]})
+  (wfields :state
+           (sort :orderDate)    
+           {:cumulativeQuantityForState (dense-rank)})
+  "
+  [& args]
   (let [op-map (reduce (fn [op-map arg]
                          (cond
-                           (not (map? arg))
+                           (not (map? arg))                     ;;if partition is a map, it will be added on else
                            (if arg {:partitionBy arg} {})
 
                            (and (map? arg) (contains? arg "$sort"))

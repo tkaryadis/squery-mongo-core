@@ -26,8 +26,8 @@
   Call (if we want to use a query operator)
   (match { views: { '$gte' 1000 }})"
   [e-doc]
-  (if (and (map? e-doc) (= (count e-doc) 1) (contains? e-doc "$__qfilter__"))
-    {"$match" (get e-doc "$__qfilter__")}
+  (if (and (map? e-doc) (= (count e-doc) 1) (contains? e-doc "$__q__"))
+    {"$match" (get e-doc "$__q__")}
     {"$match" e-doc}))
 
 (defn limit [n]
@@ -363,7 +363,7 @@
                  (rest args)))))))
 
 
-(declare lookup-p)
+(declare plookup)
 
 (defn group-array
   "Used to reduce an array to another array,because conj- is very slow
@@ -392,7 +392,7 @@
                             (keyword (str group-field-root "." initial-group-field)))
          add-fields-doc {results-field (cmql-core.operators.operators/let
                                          [:v. (cmql-core.operators.operators/get :joined 0)] :v.aggr.)}]
-     [(lookup-p one-document-coll                           ;; TODO make it global
+     [(plookup one-document-coll                           ;; TODO make it global
                 [:myarray. array-ref]
                 (pipeline
                   ;;a check that that property we want to use exists
@@ -436,7 +436,7 @@
                                                            (keyword (str "v1." (name k) ".")))))
                                {}
                                (keys accumulators))]
-    [(lookup-p one-document-coll
+    [(plookup one-document-coll
                [:myarray. array-ref]
                (pipeline
                  (facet {:aggr [{:a :myarray.}
@@ -593,13 +593,6 @@
               :pipeline (cmql-pipeline->mql-pipeline pipeline)
               :as (name join-result-field)}]
        {"$lookup" (if let-vars (assoc m :let (let-cmql-vars->map let-vars)) m)})))
-  ([join-info pipeline join-result-field]
-   (lookup-p join-info nil pipeline join-result-field)))
-
-(defn lookup-p
-  "alias of plookup [deprecated]"
-  ([join-info let-vars pipeline join-result-field]
-   (plookup join-info let-vars pipeline join-result-field))
   ([join-info pipeline join-result-field]
    (plookup join-info nil pipeline join-result-field)))
 

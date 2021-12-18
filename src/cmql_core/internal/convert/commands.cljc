@@ -3,7 +3,8 @@
             [cmql-core.internal.convert.common :refer [cmql-var-ref->mql-var-ref]]
             [cmql-core.utils :refer [ordered-map]]
             clojure.string
-            clojure.set))
+            clojure.set
+            [cmql-core.internal.convert.qoperators :refer [remove-q-combine-fields]]))
 
 ;;those are for all commands,
 (def cmql-specific-options #?(:clj #{:session :command}
@@ -44,24 +45,50 @@
               (contains? stage-operators (name k))))))
 
 (defn qfilter-stage? [stage]
-  (and (map? stage) (= (count stage) 1) (contains? stage "$__qfilter__")))
+  (and (map? stage) (= (count stage) 1) (contains? stage "$__q__")))
+
+(defn add-and-filters [filters]
+  (if (= (count filters) 1)
+    {"$expr" (first filters)}
+    {"$expr" {"$and" filters}}))
+
+(defn add-and-qfilters [filters]
+  (let [filters (remove-q-combine-fields filters)]
+    (if (= (count filters) 1)
+      (first filters)
+      {"$and" filters})))
+
+(defn group-add-and-to-filters [cmql-filters]
+  (loop [cmql-filters cmql-filters
+         qfilters []
+         filters []
+         grouped-filters []]
+    (if (empty? cmql-filters)
+      (let [grouped-filters (cond
+                              (and (empty? qfilters) (empty? filters))
+                              grouped-filters
+
+                              (empty? qfilters)
+                              (conj grouped-filters (add-and-filters filters))
+
+                              :else
+                              (conj grouped-filters (add-and-qfilters qfilters)))]
+        (if (= (count grouped-filters) 1)
+          (first grouped-filters)
+          {"$and" grouped-filters}))
+      (let [cur-filter (first cmql-filters)]
+        (if (qfilter-stage? cur-filter)
+          (if (empty? filters)
+            (recur (rest cmql-filters) (conj qfilters cur-filter) [] grouped-filters)
+            (recur (rest cmql-filters) (conj qfilters cur-filter) [] (conj grouped-filters (add-and-filters filters))))
+          (if (empty? qfilters)
+            (recur (rest cmql-filters) [] (conj filters cur-filter) grouped-filters)
+            (recur (rest cmql-filters) [] (conj filters cur-filter) (conj grouped-filters (add-and-qfilters qfilters)))))))))
 
 (defn cmql-filters->match-stage
   "Many filters(aggregate operators) combined to a match $exprs using $and operators"
-  [filters qfilters?]
-  (cond
-    (= (count filters) 1)
-    (if qfilters?
-      {"$match" (get (first filters) "$__qfilter__")}
-      {"$match" {"$expr" (first filters)}})
-
-    (> (count filters) 1)
-    (if qfilters?
-      {"$match" {"$and" (mapv #(get % "$__qfilter__") filters)}}
-      {"$match" {"$expr" {"$and" (vec filters)}}})
-
-    :else  ; i cant get here,i never call with empty filters
-    {"$match" {}}))
+  [filters]
+  {"$match" (group-add-and-to-filters filters)})
 
 ;;options are seperated,before this,here comes only stages never options
 ;;TODO there is no need to seperate qfilters from $expr filters,into seperate matches
@@ -74,76 +101,49 @@
    [] projects  => $project"
   [cmql-pipeline]
   (loop [cmql-pipeline cmql-pipeline
-         cmql-qfilters []
-         cmql-filters []
+         ;;cmql-qfilters []
+         ;;cmql-filters []
+         filters []
          mql-pipeline []]
     (if (empty? cmql-pipeline)
-      (cond
-        (and (empty? cmql-filters) (empty? cmql-qfilters))
+      (if (empty? filters)
         mql-pipeline
-
-        (not (empty? cmql-qfilters))
-        (conj mql-pipeline (cmql-filters->match-stage cmql-qfilters true))
-
-        :else
-        (conj mql-pipeline (cmql-filters->match-stage cmql-filters false)))
+        (conj mql-pipeline (cmql-filters->match-stage filters)))
       (let [stage (first cmql-pipeline)]
         (cond
 
           (or (= stage []) (nil? stage))                  ; ignore [] or nil stages
-          (recur (rest cmql-pipeline) cmql-qfilters cmql-filters mql-pipeline)
+          (recur (rest cmql-pipeline) filters mql-pipeline)
 
           (qfilter-stage? stage)
-          (if (empty? cmql-filters)
-            (recur (rest cmql-pipeline) (conj cmql-qfilters stage) [] mql-pipeline)
-            (recur (rest cmql-pipeline) (conj cmql-qfilters stage) [] (conj mql-pipeline (cmql-filters->match-stage cmql-filters false))))
+          (recur (rest cmql-pipeline) (conj filters stage) mql-pipeline)
 
           (add-stage? stage)                             ; {:a ".." :!b ".."}
           (let [stage (apply cmql-addFields->mql-addFields [stage])]
             (if (vector? stage)                 ; 1 project stage might produce nested stages,put the nested and recur
-              (recur (concat stage (rest cmql-pipeline)) cmql-qfilters cmql-filters mql-pipeline) ; do what is done for nested stages(see below)
-              (cond
-                (and (empty? cmql-filters) (empty? cmql-qfilters))
-                (recur (rest cmql-pipeline) [] [] (conj mql-pipeline stage))
-
-                (not (empty? cmql-qfilters))
-                (recur (rest cmql-pipeline) [] cmql-filters (conj mql-pipeline (cmql-filters->match-stage cmql-qfilters true) stage))
-
-                :else
-                (recur (rest cmql-pipeline) cmql-qfilters [] (conj mql-pipeline (cmql-filters->match-stage cmql-filters false) stage)))))
+              (recur (concat stage (rest cmql-pipeline)) filters mql-pipeline) ; do what is done for nested stages(see below)
+              (if (empty? filters)
+                (recur (rest cmql-pipeline) [] (conj mql-pipeline stage))
+                (recur (rest cmql-pipeline) [] (conj mql-pipeline (cmql-filters->match-stage filters) stage)))))
 
           (project-stage? stage)                             ; [:a ....]
           (let [stage (apply cmql-project->mql-project stage)]
             (if (vector? stage)                 ; 1 project stage might produce nested stages,put the nested and recur
-              (recur (concat stage (rest cmql-pipeline)) cmql-qfilters cmql-filters mql-pipeline) ; do what is done for nested stages(see below)
-              (cond
-                (and (empty? cmql-filters) (empty? cmql-qfilters))
-                (recur (rest cmql-pipeline) [] [] (conj mql-pipeline stage))
-
-                (not (empty? cmql-qfilters))
-                (recur (rest cmql-pipeline) [] cmql-filters (conj mql-pipeline (cmql-filters->match-stage cmql-qfilters true) stage))
-
-                :else
-                (recur (rest cmql-pipeline) cmql-qfilters [] (conj mql-pipeline (cmql-filters->match-stage cmql-filters false) stage)))))
+              (recur (concat stage (rest cmql-pipeline)) filters mql-pipeline) ; do what is done for nested stages(see below)
+              (if (empty? filters)
+                (recur (rest cmql-pipeline) [] (conj mql-pipeline stage))
+                (recur (rest cmql-pipeline) [] (conj mql-pipeline (cmql-filters->match-stage filters) stage)))))
 
           (vector? stage)      ; vector but no project = nested stage,add the members as stages and recur     ; TODO: REVIEW:
-          (recur (concat stage (rest cmql-pipeline)) cmql-qfilters cmql-filters mql-pipeline)
+          (recur (concat stage (rest cmql-pipeline)) filters mql-pipeline)
 
           (stage-operator? stage)                                    ; normal stage operator {}
-          (cond
-            (and (empty? cmql-filters) (empty? cmql-qfilters))
-            (recur (rest cmql-pipeline) [] [] (conj mql-pipeline stage))
-
-            (not (empty? cmql-qfilters))
-            (recur (rest cmql-pipeline) [] cmql-filters (conj mql-pipeline (cmql-filters->match-stage cmql-qfilters true) stage))
-
-            :else
-            (recur (rest cmql-pipeline) cmql-qfilters [] (conj mql-pipeline (cmql-filters->match-stage cmql-filters false) stage)))
+          (if (empty? filters)
+            (recur (rest cmql-pipeline) [] (conj mql-pipeline stage))
+            (recur (rest cmql-pipeline) [] (conj mql-pipeline (cmql-filters->match-stage filters) stage)))
 
           :else                        ; filter stage (not qfilter,they are collected above)
-          (if (empty? cmql-qfilters)
-            (recur (rest cmql-pipeline) [] (conj cmql-filters stage) mql-pipeline)
-            (recur (rest cmql-pipeline) [] (conj cmql-filters stage) (conj mql-pipeline (cmql-filters->match-stage cmql-qfilters true)))))))))
+          (recur (rest cmql-pipeline) (conj filters stage) mql-pipeline))))))
 
 
 ;;;---------------------------------------read-write--------------------------------------------------------------------
@@ -183,11 +183,11 @@
   "Seperates update arguments to [query update-pipeline options]
    Its used from update command,and from others like delete(dq) , that dont have pipeline just query and options"
   [args command-keys]
-  (let [[query update-pipeline args]
+  (let [[filters update-pipeline args]
         (reduce (fn [[query update-pipeline args] arg]
                   (cond
 
-                    (command-option? arg command-keys)         ; position is important,the rest are addFields
+                    (command-option? arg command-keys)      ; position is important,the rest are addFields
                     [query update-pipeline (conj args arg)]
 
                     (update-pipeline-stage? arg)
@@ -199,22 +199,12 @@
                 [[] [] []]
                 args)
 
-        query-with-expr (map (fn [q-form]
-                               (if (contains? q-form "$__qfilter__")
-                                 (get q-form "$__qfilter__")
-                                 {"$expr" q-form}))
-                             query)
-        query (cond
-                (= (count query-with-expr) 1)
-                (first query-with-expr)
-
-                (> (count query-with-expr) 1)
-                {"$and" (vec query-with-expr)}
-
-                :else
-                {})
+        ;;filters,update-pipeline will be converted using the aggregation common functions
+        ;;to do all the necessary processing cmql does
         ]
-    [query (cmql-pipeline->mql-pipeline update-pipeline) args]))
+    [(get (first (cmql-pipeline->mql-pipeline filters)) "$match")
+     (cmql-pipeline->mql-pipeline update-pipeline)
+     args]))
 
 (defn seperate-bulk
   "Used in bulk deletes/updates seperate the bulk queries from the args

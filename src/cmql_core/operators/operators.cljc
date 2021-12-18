@@ -16,79 +16,6 @@
             [cmql-core.internal.convert.js-functions :refer [compile-library js-args-body js-info]]
             [cmql-core.utils :refer [ordered-map]]))
 
-;;---------------------------query-operators--------------------------------
-
-;;Comparison
-(defn =- [field e]
-  {"$__qfilter__" {field {"$eq" e}}})
-
-(defn >- [field e]
-  {"$__qfilter__" {field {"$gt" e}}})
-
-(defn >=- [field e]
-  {"$__qfilter__" {field {"$gte" e}}})
-
-(defn <- [field e]
-  {"$__qfilter__" {field {"$lt" e}}})
-
-(defn <=- [field e]
-  {"$__qfilter__" {field {"$lte" e}}})
-
-(defn not=- [field e]
-  {"$__qfilter__" {field {"$ne" e}}})
-
-(defn in [field e-a]
-  {"$__qfilter__" {field {"$in" e-a}}})
-
-(defn nin [field e-a]
-  {"$__qfilter__" {field {"$nin" e-a}}})
-
-;;Logical
-
-(defn and- [& es]
-  {"$__qfilter__" {"$and" (c/mapv (c/fn [m] (if (c/and (c/map? m)
-                                                      (c/= (c/count m) 1)
-                                                      (c/contains? m "$__qfilter__"))
-                                             (c/get m "$__qfilter__")
-                                             m))
-                                 es)}})
-
-(defn nor- [& es]
-  {"$__qfilter__" {"$nor" (c/mapv (c/fn [m] (if (c/and (c/map? m)
-                                                       (c/= (c/count m) 1)
-                                                       (c/contains? m "$__qfilter__"))
-                                              (c/get m "$__qfilter__")
-                                              m))
-                                  es)}})
-
-(defn or- [& es]
-  {"$__qfilter__" {"$or" (c/mapv (c/fn [m] (if (c/and (c/map? m)
-                                                       (c/= (c/count m) 1)
-                                                       (c/contains? m "$__qfilter__"))
-                                              (c/get m "$__qfilter__")
-                                              m))
-                                  es)}})
-
-(defn not- [field e]
-  {"$__qfilter__" {field {"$not" e}}})
-
-;;Element query operators
-
-(defn exists- [field]
-  {"$__qfilter__" {field {"$exists" true}}})
-
-(defn not-exists- [field]
-  {"$__qfilter__" {field {"$exists" false}}})
-
-(defn type- [field & types]
-  (if (c/= (c/count types) 1)
-    {"$__qfilter__" {field {"$type" (c/first types)}}}
-    {"$__qfilter__" {field {"$type" (c/into [] types)}}}))
-
-;;Evaluation Query operators
-
-;;TODO
-
 ;;---------------------------Arithmetic-------------------------------------
 ;;--------------------------------------------------------------------------
 ;;--------------------------------------------------------------------------
@@ -114,8 +41,8 @@
   "$substract
   Substract numbers or numbers(milliseconds) to dates
   Call
-  (-_ 2 1)
-  (-_ :adate (*_ 5 60 1000))"
+  (- 2 1)
+  (- :adate (*_ 5 60 1000))"
   ([e-n]
    {"$substract" [0 e-n]})
   ([e-n & es]
@@ -1586,10 +1513,9 @@
 
 (defn date-from-string
   "$dateFromString"
-  ([str-or-map]
-   (if (string? str-or-map)
-     {"$dateFromString" {:dateString str-or-map}}
-     {"$dateFromString" str-or-map})))
+  [date-str & options]
+  (c/let [m {:dateString date-str}]
+    (merge m (apply (partial merge {}) options))))
 
 (defn date-subtract
   "$dateSubtract"
@@ -1869,22 +1795,39 @@
 
     ;;Not clojure overides
 
-    ;;query operators 
-    =- cmql-core.operators.operators/=-
-    >- cmql-core.operators.operators/>-
-    >=- cmql-core.operators.operators/>=-
-    <- cmql-core.operators.operators/<-
-    <=- cmql-core.operators.operators/<=-
-    not=- cmql-core.operators.operators/not=-
-    in cmql-core.operators.operators/in
-    nin cmql-core.operators.operators/nin
-    and- cmql-core.operators.operators/and-
-    nor- cmql-core.operators.operators/nor-
-    or- cmql-core.operators.operators/or-
-    not- cmql-core.operators.operators/not-
-    exists- cmql-core.operators.operators/exists-
-    not-exists- cmql-core.operators.operators/not-exists-
-    type- cmql-core.operators.operators/type-
+    ;;query operators
+
+    ;;qcompare
+    q= cmql-core.operators.qoperators/q=
+    q> cmql-core.operators.qoperators/q>
+    q>= cmql-core.operators.qoperators/q>=
+    q< cmql-core.operators.qoperators/q<
+    q<= cmql-core.operators.qoperators/q<=
+
+    ;;qlogical
+    qnot= cmql-core.operators.qoperators/qnot=
+    qcontains? cmql-core.operators.qoperators/qcontains?
+    qnot-contains? cmql-core.operators.qoperators/qnot-contains?
+    qnot cmql-core.operators.qoperators/qnot
+    qand cmql-core.operators.qoperators/qand
+    qnor cmql-core.operators.qoperators/qnor
+    qor cmql-core.operators.qoperators/qor
+
+    ;;qelement query
+    qexists? cmql-core.operators.qoperators/qexists?
+    qnot-exists? cmql-core.operators.qoperators/qnot-exists?
+    qtype cmql-core.operators.qoperators/qtype
+
+    ;;qevaluation
+    qmod cmql-core.operators.qoperators/qmod
+    qregex cmql-core.operators.qoperators/qregex
+    jsonSchema cmql-core.operators.qoperators/jsonSchema
+    text cmql-core.operators.qoperators/text
+    where cmql-core.operators.qoperators/where
+    qcontains-all? cmql-core.operators.qoperators/qcontains-all?
+    elem-match cmql-core.operators.qoperators/elem-match
+    qcount cmql-core.operators.qoperators/qcount
+    qtake cmql-core.operators.qoperators/qtake
 
     abs cmql-core.operators.operators/abs
     pow cmql-core.operators.operators/pow
@@ -2013,7 +1956,6 @@
     lookup cmql-core.operators.stages/lookup
     plookup cmql-core.operators.stages/plookup
     glookup cmql-core.operators.stages/glookup
-    lookup-p cmql-core.operators.stages/lookup-p
     join cmql-core.operators.stages/join
     out cmql-core.operators.stages/out
     if-match cmql-core.operators.stages/if-match

@@ -173,11 +173,13 @@
                                     (keyword k)
                                     k)))))
 
-(defn upsert-query [args]
-  (let [upsert? (contains? (into #{} args) {:upsert true})
-        [upsert-query args] (if upsert? [(first args) (rest args)] [nil args]) ; if upsert,the first argument is the q doc
-        ]
-    [upsert-query args]))
+(defn upsert-doc [args]
+  (reduce (fn [[upsert-doc args] arg]
+            (if (contains? arg :upsert)
+              [(get arg :upsert) (conj args {"upsert" true})]
+              [upsert-doc (conj args arg)]))
+          [nil []]
+          args))
 
 (defn args->query-updatePipeline-options
   "Seperates update arguments to [query update-pipeline options]
@@ -202,9 +204,35 @@
         ;;filters,update-pipeline will be converted using the aggregation common functions
         ;;to do all the necessary processing cmql does
         ]
-    [(get (first (cmql-pipeline->mql-pipeline filters)) "$match")
+    [(if (empty? filters) {} (get (first (cmql-pipeline->mql-pipeline filters)) "$match"))
      (cmql-pipeline->mql-pipeline update-pipeline)
      args]))
+
+(defn args->query-updateOperators-options
+  "Seperates update arguments to [query update-pipeline options]
+   Its used from update command,and from others like delete(dq) , that dont have pipeline just query and options"
+  [args command-keys]
+  (let [[filters updateOperators args]
+        (reduce (fn [[filters updateOperators args] arg]
+                  (cond
+
+                    (command-option? arg command-keys)      ; position is important,the rest are addFields
+                    [filters updateOperators (conj args arg)]
+
+                    (contains? arg "$__u__")
+                    [filters (conj updateOperators (get arg "$__u__")) args]
+
+                    :else                                   ;;query form
+                    [(conj filters arg) updateOperators args]
+                    ))
+                [[] [] []]
+                args)
+
+        ]
+    [(if (empty? filters) {} (get (first (cmql-pipeline->mql-pipeline filters)) "$match"))
+     updateOperators
+     args]))
+
 
 (defn seperate-bulk
   "Used in bulk deletes/updates seperate the bulk queries from the args

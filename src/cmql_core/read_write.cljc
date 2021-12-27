@@ -1,10 +1,11 @@
 (ns cmql-core.read-write
   (:require [cmql-core.utils :refer [ordered-map]]
             [cmql-core.internal.convert.common :refer [single-maps]]
-            [cmql-core.internal.convert.commands :refer [split-db-namespace
-                                           command-keys get-pipeline-options cmql-pipeline->mql-pipeline
-                                           args->query-updatePipeline-options upsert-query seperate-bulk
-                                           cmql-map->mql-map]]
+            [cmql-core.internal.convert.commands :refer
+             [split-db-namespace
+              command-keys get-pipeline-options cmql-pipeline->mql-pipeline
+              args->query-updatePipeline-options args->query-updateOperators-options upsert-doc seperate-bulk
+              cmql-map->mql-map]]
             cmql-core.operators.operators))
 
 ;;also i want to be able to take a raw-mongo-command(only the necessary args and the rest in a map) and run it
@@ -278,6 +279,7 @@
    :bypassDocumentValidation "boolean"
    })
 
+;;"$__u__"
 
 (defn uq-f
   "Update query,one update command can take one or many uqs
@@ -296,16 +298,22 @@
                 10)}
       {:upsert true})"
   [& args]
-  (let [command-keys (command-keys (get-in update-def [:updates 0]))
-        [upsert-query args] (upsert-query args)
+  (let [not-pipeline? (reduce (fn [not-pipeline? arg] (or not-pipeline? (contains? arg "$__u__"))) false args)
+        command-keys (command-keys (get-in update-def [:updates 0]))
         args (single-maps args command-keys)
-        [query update-pipeline options] (args->query-updatePipeline-options args command-keys)
-        query (if (some? upsert-query) upsert-query query)
-        options (apply (partial merge {})options)
-        options (assoc options :multi (get options :multi true))]
-    {:uq (merge {:q query} {:u update-pipeline} options)}))
-
-
+        [upsert-query args] (upsert-doc args)]
+    (if not-pipeline?
+      (let [[query update-operators options] (args->query-updateOperators-options args command-keys)
+            query (if (some? upsert-query) upsert-query query)
+            update-operators (apply (partial merge {}) update-operators)
+            options (apply (partial merge {}) options)
+            options (assoc options :multi (get options :multi true))]
+        {:uq (merge {:q query} {:u update-operators} options)})
+      (let [[query update-pipeline options] (args->query-updatePipeline-options args command-keys)
+            query (if (some? upsert-query) upsert-query query)
+            options (apply (partial merge {}) options)
+            options (assoc options :multi (get options :multi true))]
+        {:uq (merge {:q query} {:u update-pipeline} options)}))))
 
 (defn update-
   "Update documents using one or more update queries uqs
@@ -314,8 +322,7 @@
   (update- :testdb.testcoll (uq ...) (uq ..) opt1 opt2 ...)
   (update- :testdb.testcoll [(uq ...) (uq ..)] opt1 opt2 ...)"
   [db-namespace & args]
-  (let [
-        [db-name coll-name] (split-db-namespace db-namespace)
+  (let [[db-name coll-name] (split-db-namespace db-namespace)
         command-keys (command-keys update-def)
         args (single-maps args command-keys)
         args (flatten args) ;; bulk updates ([uq1 uq2] arg1 arg2) => (uq1 uq2 arg1 arg2)
@@ -382,12 +389,10 @@
   (let [
         [db-name coll-name] (split-db-namespace db-namespace)
         command-keys (command-keys find-and-modify-def)
-        [upsert-query args] (upsert-query args)
         args (single-maps args command-keys)
+        [upsert-query args] (upsert-doc args)
         [query update-pipeline args] (args->query-updatePipeline-options args command-keys)
-
         query (if (some? upsert-query) upsert-query query)
-
         [stage-options update-pipeline]  (reduce (fn [[options stages] stage]
                                                    (if (= (first (keys stage)) "$sort")
                                                      [(conj options {:sort (first (vals stage))}) stages]

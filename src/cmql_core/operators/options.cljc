@@ -14,6 +14,9 @@
 (defn allow-disk-use []
   {:allowDiskUse true})
 
+(defn upsert [v]
+  {"upsert" v})
+
 ;;-----------------------------------my key options---------------------------------------------------------------------
 
 ;;Those will not be part of command,so i have to manually add them as command options(else would look like addFields)

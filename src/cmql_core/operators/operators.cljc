@@ -1806,8 +1806,8 @@
 
     ;;qlogical
     qnot= cmql-core.operators.qoperators/qnot=
-    qcontains? cmql-core.operators.qoperators/qcontains?
-    qnot-contains? cmql-core.operators.qoperators/qnot-contains?
+    qmember? cmql-core.operators.qoperators/qmember?
+    qnot-member? cmql-core.operators.qoperators/qnot-member?
     qnot cmql-core.operators.qoperators/qnot
     qand cmql-core.operators.qoperators/qand
     qnor cmql-core.operators.qoperators/qnor
@@ -1968,4 +1968,26 @@
     sample cmql-core.operators.stages/sample
     wfields cmql-core.operators.stages/wfields
     list-local-sessions cmql-core.operators.stages/list-local-sessions
+
+
+    ;;update operators
+    unow-date cmql-core.operators.uoperators/unow-date
+    u+ cmql-core.operators.uoperators/u+
+    u* cmql-core.operators.uoperators/u*
+    umin cmql-core.operators.uoperators/umin
+    umax cmql-core.operators.uoperators/umax
+    urename cmql-core.operators.uoperators/urename
+    uset cmql-core.operators.uoperators/uset
+    uset-on-insert cmql-core.operators.uoperators/uset-on-insert
+    uunset cmql-core.operators.uoperators/uunset
+    uconj-distinct cmql-core.operators.uoperators/uconj-distinct
+    uconj cmql-core.operators.uoperators/uconj
+    upop cmql-core.operators.uoperators/upop
+    upull cmql-core.operators.uoperators/upull
+    upull-all cmql-core.operators.uoperators/upull-all
+    ueach cmql-core.operators.uoperators/ueach
+    uposition cmql-core.operators.uoperators/uposition
+    uslice cmql-core.operators.uoperators/uslice
+    usort cmql-core.operators.uoperators/usort
     ])
+

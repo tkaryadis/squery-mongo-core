@@ -1798,36 +1798,36 @@
     ;;query operators
 
     ;;qcompare
-    q= cmql-core.operators.qoperators/q=
-    q> cmql-core.operators.qoperators/q>
-    q>= cmql-core.operators.qoperators/q>=
-    q< cmql-core.operators.qoperators/q<
-    q<= cmql-core.operators.qoperators/q<=
+    =- cmql-core.operators.qoperators/=-
+    >- cmql-core.operators.qoperators/>-
+    >=- cmql-core.operators.qoperators/>=-
+    <- cmql-core.operators.qoperators/<-
+    <=- cmql-core.operators.qoperators/<=-
 
     ;;qlogical
-    qnot= cmql-core.operators.qoperators/qnot=
-    qmember? cmql-core.operators.qoperators/qmember?
-    qnot-member? cmql-core.operators.qoperators/qnot-member?
-    qnot cmql-core.operators.qoperators/qnot
-    qand cmql-core.operators.qoperators/qand
-    qnor cmql-core.operators.qoperators/qnor
-    qor cmql-core.operators.qoperators/qor
+    not=- cmql-core.operators.qoperators/not=-
+    member?- cmql-core.operators.qoperators/member?-
+    not-member?- cmql-core.operators.qoperators/not-member?-
+    not- cmql-core.operators.qoperators/not-
+    and- cmql-core.operators.qoperators/and-
+    nor- cmql-core.operators.qoperators/nor-
+    or- cmql-core.operators.qoperators/or-
 
     ;;qelement query
-    qexists? cmql-core.operators.qoperators/qexists?
-    qnot-exists? cmql-core.operators.qoperators/qnot-exists?
-    qtype cmql-core.operators.qoperators/qtype
+    exists?- cmql-core.operators.qoperators/exists?-
+    not-exists?- cmql-core.operators.qoperators/not-exists?-
+    type- cmql-core.operators.qoperators/type-
 
     ;;qevaluation
-    qmod cmql-core.operators.qoperators/qmod
-    qregex cmql-core.operators.qoperators/qregex
-    jsonSchema cmql-core.operators.qoperators/jsonSchema
-    text cmql-core.operators.qoperators/text
-    where cmql-core.operators.qoperators/where
-    qcontains-all? cmql-core.operators.qoperators/qcontains-all?
-    elem-match cmql-core.operators.qoperators/elem-match
-    qcount cmql-core.operators.qoperators/qcount
-    qtake cmql-core.operators.qoperators/qtake
+    mod- cmql-core.operators.qoperators/mod-
+    regex- cmql-core.operators.qoperators/regex-
+    jsonSchema- cmql-core.operators.qoperators/jsonSchema-
+    text- cmql-core.operators.qoperators/text-
+    where- cmql-core.operators.qoperators/where-
+    contains-all?- cmql-core.operators.qoperators/contains-all?-
+    elem-match- cmql-core.operators.qoperators/elem-match-
+    count- cmql-core.operators.qoperators/count-
+    take- cmql-core.operators.qoperators/take-
 
     abs cmql-core.operators.operators/abs
     pow cmql-core.operators.operators/pow
@@ -1969,25 +1969,22 @@
     wfields cmql-core.operators.stages/wfields
     list-local-sessions cmql-core.operators.stages/list-local-sessions
 
-
     ;;update operators
-    unow-date cmql-core.operators.uoperators/unow-date
-    u+ cmql-core.operators.uoperators/u+
-    u* cmql-core.operators.uoperators/u*
-    umin cmql-core.operators.uoperators/umin
-    umax cmql-core.operators.uoperators/umax
-    urename cmql-core.operators.uoperators/urename
-    uset cmql-core.operators.uoperators/uset
-    uset-on-insert cmql-core.operators.uoperators/uset-on-insert
-    uunset cmql-core.operators.uoperators/uunset
-    uconj-distinct cmql-core.operators.uoperators/uconj-distinct
-    uconj cmql-core.operators.uoperators/uconj
-    upop cmql-core.operators.uoperators/upop
-    upull cmql-core.operators.uoperators/upull
-    upull-all cmql-core.operators.uoperators/upull-all
-    ueach cmql-core.operators.uoperators/ueach
-    uposition cmql-core.operators.uoperators/uposition
-    uslice cmql-core.operators.uoperators/uslice
-    usort cmql-core.operators.uoperators/usort
-    ])
-
+    now-date_ cmql-core.operators.uoperators/now-date_
+    +_ cmql-core.operators.uoperators/+_
+    *_ cmql-core.operators.uoperators/*_
+    min_ cmql-core.operators.uoperators/min_
+    max_ cmql-core.operators.uoperators/max_
+    rename_ cmql-core.operators.uoperators/rename_
+    set_ cmql-core.operators.uoperators/set_
+    set-on-insert_ cmql-core.operators.uoperators/set-on-insert_
+    unset_ cmql-core.operators.uoperators/unset_
+    conj-distinct_ cmql-core.operators.uoperators/conj-distinct_
+    conj_ cmql-core.operators.uoperators/conj_
+    pop_ cmql-core.operators.uoperators/pop_
+    pull_ cmql-core.operators.uoperators/pull_
+    pull-all_ cmql-core.operators.uoperators/pull-all_
+    each_ cmql-core.operators.uoperators/each_
+    position_ cmql-core.operators.uoperators/position_
+    slice_ cmql-core.operators.uoperators/slice_
+    sort_ cmql-core.operators.uoperators/sort_])

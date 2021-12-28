@@ -29,44 +29,44 @@
 
 ;;----------------------------------------------Comparison--------------------------------------------------------------
 
-(defn q=
+(defn =-
   ([field value]
    {"$__q__" {(name field) {"$eq" value}}})
   ([value]
    {"$__q__" {"$eq" value}}))
 
-(defn q>
+(defn >-
   ([field value]
    {"$__q__" {(name field) {"$gt" value}}})
   ([value]
    {"$__q__" {"$gt" value}}))
 
-(defn q>=
+(defn >=-
   ([field value]
    {"$__q__" {(name field) {"$gte" value}}})
   ([value]
    {"$__q__" {"$gte" value}}))
 
-(defn q<
+(defn <-
   ([field value]
    {"$__q__" {(name field) {"$lt" value}}})
   ([value]
    {"$__q__" {"$lt" value}}))
 
 
-(defn q<=
+(defn <=-
   ([field value]
    {"$__q__" {(name field) {"$lte" value}}})
   ([value]
    {"$__q__" {"$lte" value}}))
 
-(defn qnot=
+(defn not=-
   ([field value]
    {"$__q__" {(name field) {"$ne" value}}})
   ([value]
    {"$__q__" {"$ne" value}}))
 
-(defn qmember?
+(defn member?-
   "if field single value => check if array contains that value
    if field array => check if array contains any of those value (at least 1 not all)"
   ([field ar-value]
@@ -74,7 +74,7 @@
   ([ar-value]
    {"$__q__" {"$in" ar-value}}))
 
-(defn qnot-member?
+(defn not-member?-
   ([field ar-value]
    {"$__q__" {(name field) {"$nin" ar-value}}})
   ([ar-value]
@@ -83,37 +83,37 @@
 
 ;;------------------------------------------------Logical---------------------------------------------------------------
 
-(defn qnot
+(defn not-
   ([field value]
    {"$__q__" {(name field) {"$not" value}}})
   ([value]
    {"$__q__" {"$not" value}}))
 
-(defn qand [& es]
+(defn and- [& es]
   {"$__q__" {"$and" (remove-q-combine-fields es)}})
 
-(defn qnor [& es]
+(defn nor- [& es]
   {"$__q__" {"$nor" (remove-q-combine-fields es)}})
 
-(defn qor [& es]
+(defn or- [& es]
   {"$__q__" {"$or" (remove-q-combine-fields es)}})
 
 ;;--------------------------------------------Element query operators---------------------------------------------------
 
-(defn qexists? [field]
+(defn exists?- [field]
   {"$__q__" {(name field) {"$exists" true}}})
 
-(defn qnot-exists? [field]
+(defn not-exists?- [field]
   {"$__q__" {(name field) {"$exists" false}}})
 
-(defn qtype [field & types]
+(defn type- [field & types]
   (if (c/= (c/count types) 1)
     {"$__q__" {(name field) {"$type" (c/first types)}}}
     {"$__q__" {(name field) {"$type" (c/into [] types)}}}))
 
 ;;-------------------------------------------Evaluation-----------------------------------------------------------------
 
-(defn qmod
+(defn mod-
   "checks if field/divisor has the remainder"
   ([field divisor remainder]
    {"$__q__" { (name field) { "$mod" [ divisor remainder]}}})
@@ -121,7 +121,7 @@
    {"$__q__" { "$mod" [ divisor remainder]}}))
 
 
-(defn qregex
+(defn regex-
   ([field pattern-options-vec]
    (c/let [m { "$regex" (c/first pattern-options-vec) } ]
      (if (c/= (c/count pattern-options-vec) 1)
@@ -133,10 +133,10 @@
        {"$__q__" m}
        {"$__q__" (c/assoc m "$options" (c/second pattern-options-vec))}))))
 
-(defn jsonSchema [schema-doc]
+(defn jsonSchema- [schema-doc]
   {"$__q__" {"$jsonSchema" schema-doc}})
 
-(defn text [search-str & options]
+(defn text- [search-str & options]
   (let [options-map (apply (partial c/merge {}) options)
         m {"$text" {"$search"  search-str}}
         m (if (get options-map "$language")
@@ -150,24 +150,24 @@
             m)]
     {"$__q__" m}))
 
-(defn where [js-code]
+(defn where- [js-code]
   {"$__q__" { "$where" js-code }})
 
 ;;----------------------------------------Array-------------------------------------------------------------------------
 
-(defn qcontains-all?
+(defn contains-all?-
   ([field arr-value]
    {"$__q__" {(name field) { "$all" arr-value}}})
   ([arr-value]
    {"$__q__" { "$all" arr-value}}))
 
-(defn elem-match
+(defn elem-match-
   ([& qs]
    (if (map? (first qs))
      {"$__q__" {"$elemMatch" (apply (partial c/merge {}) (remove-q-combine-fields qs))}}
      {"$__q__" {(name (first qs)) {"$elemMatch" (apply (partial c/merge {}) (remove-q-combine-fields (rest qs)))}}})))
 
-(defn qcount
+(defn count-
   ([field size]
    {"$__q__" {(name field) { "$size" size } }})
   ([size]
@@ -176,6 +176,6 @@
 
 ;;--------------------------------------Project-------------------------------------------------------------------------
 
-(defn qtake
+(defn take-
   ([field n] { (name field) { "$slice" [n] }})
   ([field start-index n] {(name field) { "$slice" [ start-index n ] } }))

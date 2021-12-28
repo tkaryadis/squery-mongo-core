@@ -386,25 +386,34 @@
                    (fields-o :!_id :name)
                    (new-o))"
   [db-namespace & args]
-  (let [
+  (let [not-pipeline? (reduce (fn [not-pipeline? arg] (or not-pipeline? (contains? arg "$__u__"))) false args)
         [db-name coll-name] (split-db-namespace db-namespace)
         command-keys (command-keys find-and-modify-def)
         args (single-maps args command-keys)
         [upsert-query args] (upsert-doc args)
-        [query update-pipeline args] (args->query-updatePipeline-options args command-keys)
-        query (if (some? upsert-query) upsert-query query)
-        [stage-options update-pipeline]  (reduce (fn [[options stages] stage]
-                                                   (if (= (first (keys stage)) "$sort")
-                                                     [(conj options {:sort (first (vals stage))}) stages]
-                                                     [options (conj stages stage)]))
-                                                 [[] []]
-                                                 update-pipeline)
 
-        args (concat args stage-options)
+        [query update-operators args]
+        (if not-pipeline?
+          (let [[query update-operators options] (args->query-updateOperators-options args command-keys)
+                update-operators (apply (partial merge {}) update-operators)
+                options (apply (partial merge {}) options)]
+            [query update-operators options])
+          (let [[query update-pipeline args] (args->query-updatePipeline-options args command-keys)
+                [stage-options update-pipeline]  (reduce (fn [[options stages] stage]
+                                                           (if (= (first (keys stage)) "$sort")
+                                                             [(conj options {:sort (first (vals stage))}) stages]
+                                                             [options (conj stages stage)]))
+                                                         [[] []]
+                                                         update-pipeline)
+                args (concat args stage-options)]
+            [query update-pipeline args]))
+
+        _ (prn "xxx" [query update-operators args])
+        query (if (some? upsert-query) upsert-query query)
 
         ;;update-pipeline can only have 1 or more projects,that will combined to one
         args (conj args (if (empty? query) {} {:query query}))
-        args (conj args (if (empty? update-pipeline) {} {:update update-pipeline}))
+        args (conj args (if (empty? update-operators) {} {:update update-operators}))
 
         cmql-map (apply (partial merge {}) args)
 
@@ -413,6 +422,7 @@
 
         ;- (clojure.pprint/pprint command-map)
         ]
+
     {:db db-name
      :coll coll-name
      :command-head command-head

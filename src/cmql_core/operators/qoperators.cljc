@@ -12,7 +12,7 @@
 
 
 ;;bad idea makes things complicated, i dont want pattern matching, and 1 documents with impllicit $and
-(defn qf
+#_(defn qf
   "Converts a document pattern query, to a cmql filter
    For example {:_id (q= 1) :a (q> 2} would be made as [(q= :_id 1) (q> :a 2)]
    And auto-unested later from cmql, to become 2 filters (q= :_id 1) (q> :a 2)"

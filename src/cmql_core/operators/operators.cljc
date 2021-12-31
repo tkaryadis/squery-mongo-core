@@ -1987,4 +1987,6 @@
     each_ cmql-core.operators.uoperators/each_
     position_ cmql-core.operators.uoperators/position_
     slice_ cmql-core.operators.uoperators/slice_
-    sort_ cmql-core.operators.uoperators/sort_])
+    sort_ cmql-core.operators.uoperators/sort_
+    
+    ])

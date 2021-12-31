@@ -6,13 +6,8 @@
 
 ;;------------------------------tools------------------------------------------------------
 
-(defn check-even [args]
-  (if-not (even? (count args))
-    (throw (Exception. "update  must contain an even number of arguments"))))
-
 (defn get-function-map [keyword-f args]
   (let [args (map #(if (keyword? %) (name %) %) args)
-        ;- (check-even args)
         args-map (into {} (map vec (partition 2 args)))
         ;- (prn {(str "$" (name keyword-f)) args-map})
         ]

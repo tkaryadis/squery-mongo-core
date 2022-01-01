@@ -1438,7 +1438,7 @@
 ;; https://www.debuggex.com/cheatsheet/regex/pcre
 ;; https://mariadb.com/kb/en/pcre/
 
-(defn re-matcher
+(defn re-find?
   "$regexMatch"
   ([pattern-expression string-s-expression options-s-expression]
    {"$regexMatch" {
@@ -1788,7 +1788,7 @@
     subs cmql-core.operators.operators/subs
     take-str cmql-core.operators.operators/take-str
     re-find cmql-core.operators.operators/re-find
-    re-matcher cmql-core.operators.operators/re-matcher
+    re-find? cmql-core.operators.operators/re-find?
     re-seq cmql-core.operators.operators/re-seq
     replace cmql-core.operators.operators/replace
     replace-all cmql-core.operators.operators/replace-all

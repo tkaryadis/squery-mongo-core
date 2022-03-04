@@ -217,7 +217,14 @@
                   (cond
 
                     (command-option? arg command-keys)      ; position is important,the rest are addFields
-                    [filters updateOperators (conj args arg)]
+                    (if (contains? arg :arrayFilters)
+                      (let [array-filters (get arg :arrayFilters)
+                            array-filters (mapv (fn [f] (if (contains? f "$__q__")
+                                                          (get f "$__q__")
+                                                          f))
+                                                array-filters)]
+                        [filters updateOperators (conj args {:arrayFilters array-filters})])
+                      [filters updateOperators (conj args arg)])
 
                     (contains? arg "$__u__")
                     [filters (conj updateOperators (get arg "$__u__")) args]

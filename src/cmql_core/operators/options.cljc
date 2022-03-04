@@ -30,3 +30,9 @@
    {:explain "queryPlanner"})
   ([verbosity]
    {:explain verbosity}))
+
+(defn array-filters [& filters]
+  {:arrayFilters (into [] filters)})
+
+(defn path [& filters]
+  {:arrayFilters (into [] filters)})

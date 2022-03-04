@@ -298,7 +298,9 @@
                 10)}
       {:upsert true})"
   [& args]
-  (let [not-pipeline? (reduce (fn [not-pipeline? arg] (or not-pipeline? (contains? arg "$__u__"))) false args)
+  (let [not-pipeline? (reduce (fn [not-pipeline? arg] (or not-pipeline?
+                                                          (contains? arg "$__u__")
+                                                          (contains? arg "$__us__"))) false args)
         command-keys (command-keys (get-in update-def [:updates 0]))
         args (single-maps args command-keys)
         [upsert-query args] (upsert-doc args)]
@@ -332,9 +334,8 @@
         cmql-map (apply (partial merge {}) (conj options {:updates updates}))
 
         command-head {"update" coll-name}
-        command-body (cmql-map->mql-map cmql-map)
 
-        ;_ (clojure.pprint/pprint command-body)
+        command-body (cmql-map->mql-map cmql-map)
         ]
     {:db db-name
      :coll coll-name
@@ -408,7 +409,6 @@
                 args (concat args stage-options)]
             [query update-pipeline args]))
 
-        _ (prn "xxx" [query update-operators args])
         query (if (some? upsert-query) upsert-query query)
 
         ;;update-pipeline can only have 1 or more projects,that will combined to one
@@ -427,7 +427,6 @@
      :coll coll-name
      :command-head command-head
      :command-body command-body}))
-
 
 
 ;;------------------------------aggregate--------------------------------------------------

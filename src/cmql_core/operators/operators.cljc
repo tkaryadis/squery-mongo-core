@@ -1,4 +1,5 @@
 (ns cmql-core.operators.operators
+
   (:refer-clojure :exclude [+ inc - dec * mod
                             = not= > >= < <=
                             and or not nor
@@ -9,7 +10,7 @@
                             concat conj contains? range reverse count take subvec empty? not-empty? conj-distinct
                             fn map filter reduce
                             first last merge max min
-                            str subs re-find re-matcher re-seq replace])
+                            str subs re-find re-matcher re-seq replace identity])
   (:require [clojure.core :as c]
             [cmql-core.internal.convert.common :refer [args->nested-2args cmql-var-ref->mql-var-ref]]
             [cmql-core.internal.convert.operators :refer [cmql-var-name get-nested-lets get-lets]]
@@ -489,6 +490,10 @@
         nested-lets (get-nested-lets lets body)]
     nested-lets))
 
+(defn identity
+  "returns its argument, useful when we want to use an array as argument"
+  [e]
+  {"$let" { "vars" {}, "in" e}})
 
 ;;---------------------------Arrays-----------------------------------------
 ;;--------------------------------------------------------------------------
@@ -1105,11 +1110,10 @@
   (filter  (fn [:n.] (> :n. 0)) :myarray)"
   [cond-fn e-array]
   (c/let [argument (c/first (c/first (c/get cond-fn :mongo-fn)))
-          cond-value (c/second (c/get cond-fn :mongo-fn))
-          filter-arg {:input e-array :cond  cond-value} ]
+          cond-value (c/second (c/get cond-fn :mongo-fn))]
     (if (c/= argument "this")
-      {"$filter" filter-arg}
-      {"$filter" (c/assoc filter-arg :as argument)})))
+      {"$filter" {:input e-array :cond  cond-value}}
+      {"$filter" {:input e-array :as argument :cond  cond-value}})))
 
 (defn map
   "$map
@@ -1117,11 +1121,10 @@
   (map  (fn [:n.] (+ :n. 1)) :myarray)"
   [map-fn e-array]
   (c/let [argument (c/first (c/first (c/get map-fn :mongo-fn)))
-          in-value (c/second (c/get map-fn :mongo-fn))
-          map-arg {:input e-array :in  in-value} ]
+          in-value (c/second (c/get map-fn :mongo-fn))]
     (if (c/= argument "this")
-      {"$map" map-arg}
-      {"$map" (c/assoc map-arg :as argument)})))
+      {"$map" {:input e-array :in  in-value}}
+      {"$map" {:input e-array :as argument :in  in-value}})))
 
 ;;---------------------------Documents(some are mixed with arrays aboves)----------------------
 
@@ -1440,11 +1443,11 @@
 
 (defn re-find?
   "$regexMatch"
-  ([pattern-expression string-s-expression options-s-expression]
+  ([pattern-expression string-s-expression options]
    {"$regexMatch" {
                    "input"   string-s-expression
                    "regex"   pattern-expression
-                   "options" options-s-expression
+                   "options" options
                    }})
   ([pattern-expression string-s-expression]
    { "$regexMatch" {
@@ -1454,11 +1457,11 @@
 
 (defn re-find
   "$regexFind"
-  ([pattern-expression string-s-expression options-s-expression]
+  ([pattern-expression string-s-expression options]
    { "$regexFind" {
                    "input"   string-s-expression
                    "regex"   pattern-expression
-                   "options" options-s-expression
+                   "options" options
                    }})
   ([pattern-expression string-s-expression]
    { "$regexFind" {
@@ -1468,11 +1471,11 @@
 
 (defn re-seq
   "$regexFindAll"
-  ([pattern-expression string-s-expression options-s-expression]
+  ([pattern-expression string-s-expression options]
    { "$regexFindAll" {
                       "input"   string-s-expression
                       "regex"   pattern-expression
-                      "options" options-s-expression
+                      "options" options
                       }})
   ([pattern-expression string-s-expression]
    { "$regexFindAll" {
@@ -1758,6 +1761,7 @@
     number? cmql-core.operators.operators/number?
     rand cmql-core.operators.operators/rand
     let cmql-core.operators.operators/let
+    identity cmql-core.operators.operators/identity
     get cmql-core.operators.operators/get
     get-in cmql-core.operators.operators/get-in
     assoc cmql-core.operators.operators/assoc
@@ -1988,5 +1992,8 @@
     position_ cmql-core.operators.uoperators/position_
     slice_ cmql-core.operators.uoperators/slice_
     sort_ cmql-core.operators.uoperators/sort_
+    
+    ;;options
+    upsert cmql-core.operators.options/upsert
     
     ])

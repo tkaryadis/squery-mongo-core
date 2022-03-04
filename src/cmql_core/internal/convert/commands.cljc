@@ -222,6 +222,9 @@
                     (contains? arg "$__u__")
                     [filters (conj updateOperators (get arg "$__u__")) args]
 
+                    (contains? arg "$__us__")
+                    [filters (apply (partial conj updateOperators) (get arg "$__us__")) args]
+
                     :else                                   ;;query form
                     [(conj filters arg) updateOperators args]
                     ))

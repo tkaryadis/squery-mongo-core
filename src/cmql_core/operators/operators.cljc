@@ -1,5 +1,4 @@
 (ns cmql-core.operators.operators
-
   (:refer-clojure :exclude [+ inc - dec * mod
                             = not= > >= < <=
                             and or not nor
@@ -1942,61 +1941,58 @@
     ;;query operators
 
     ;;qcompare
-    q= cmql-core.operators.qoperators/q=
-    q> cmql-core.operators.qoperators/q>
-    q>= cmql-core.operators.qoperators/q>=
-    q< cmql-core.operators.qoperators/q<
-    q<= cmql-core.operators.qoperators/q<=
+    =? cmql-core.operators.qoperators/=?
+    >? cmql-core.operators.qoperators/>?
+    >=? cmql-core.operators.qoperators/>=?
+    <? cmql-core.operators.qoperators/<?
+    <=? cmql-core.operators.qoperators/<=?
 
     ;;qlogical
-    qnot= cmql-core.operators.qoperators/qnot=
+    not=? cmql-core.operators.qoperators/not=?
     in? cmql-core.operators.qoperators/in?
     not-in? cmql-core.operators.qoperators/not-in?
-    qnot cmql-core.operators.qoperators/qnot
-    qand cmql-core.operators.qoperators/qand
-    qnor cmql-core.operators.qoperators/qnor
-    qor cmql-core.operators.qoperators/qor
+    not? cmql-core.operators.qoperators/not?
+    and? cmql-core.operators.qoperators/and?
+    nor? cmql-core.operators.qoperators/nor?
+    or? cmql-core.operators.qoperators/or?
 
     ;;
-    qexists? cmql-core.operators.qoperators/qexists?
-    qnot-exists? cmql-core.operators.qoperators/qnot-exists?
-    qtype cmql-core.operators.qoperators/qtype
+    exists?? cmql-core.operators.qoperators/exists??
+    not-exists?? cmql-core.operators.qoperators/not-exists??
+    type? cmql-core.operators.qoperators/type?
 
     ;;qevaluation
-    qmod cmql-core.operators.qoperators/qmod
-    qre-find? cmql-core.operators.qoperators/qre-find?
-    json-schema cmql-core.operators.qoperators/json-schema
-    text cmql-core.operators.qoperators/text
-    where cmql-core.operators.qoperators/where
-    qsuperset? cmql-core.operators.qoperators/qsuperset?
+    mod? cmql-core.operators.qoperators/mod?
+    re-find?? cmql-core.operators.qoperators/re-find??
+    json-schema? cmql-core.operators.qoperators/json-schema?
+    text? cmql-core.operators.qoperators/text?
+    where? cmql-core.operators.qoperators/where?
+    superset? cmql-core.operators.qoperators/superset?
     elem-match? cmql-core.operators.qoperators/elem-match?
-    qcount cmql-core.operators.qoperators/qcount
-    qtake cmql-core.operators.qoperators/qtake
-
+    count? cmql-core.operators.qoperators/count?
 
     ;;update operators
-    date-now cmql-core.operators.uoperators/date-now
-    u+ cmql-core.operators.uoperators/u+
-    u* cmql-core.operators.uoperators/u*
-    umin cmql-core.operators.uoperators/umin
-    umax cmql-core.operators.uoperators/umax
-    urename cmql-core.operators.uoperators/urename
-    uset cmql-core.operators.uoperators/uset
-    uset-on-insert cmql-core.operators.uoperators/uset-on-insert
-    uunset cmql-core.operators.uoperators/uunset
-    uconj-distinct cmql-core.operators.uoperators/uconj-distinct
-    uconj cmql-core.operators.uoperators/uconj
-    upop cmql-core.operators.uoperators/upop
-    pull cmql-core.operators.uoperators/pull
-    pull-all cmql-core.operators.uoperators/pull-all
-    each cmql-core.operators.uoperators/each
-    position cmql-core.operators.uoperators/position
-    slice cmql-core.operators.uoperators/slice
-    usort cmql-core.operators.uoperators/usort
-    
+    now-date! cmql-core.operators.uoperators/now-date!
+    +! cmql-core.operators.uoperators/+!
+    *! cmql-core.operators.uoperators/*!
+    min! cmql-core.operators.uoperators/min!
+    max! cmql-core.operators.uoperators/max!
+    rename! cmql-core.operators.uoperators/rename!
+    set!- cmql-core.operators.uoperators/set!-
+    set-on-insert! cmql-core.operators.uoperators/set-on-insert!
+    unset! cmql-core.operators.uoperators/unset!
+    conj-distinct! cmql-core.operators.uoperators/conj-distinct!
+    conj! cmql-core.operators.uoperators/conj!
+    pop! cmql-core.operators.uoperators/pop!
+    remove! cmql-core.operators.uoperators/remove!
+    remove-all! cmql-core.operators.uoperators/remove-all!
+    each! cmql-core.operators.uoperators/each!
+    position! cmql-core.operators.uoperators/position!
+    slice! cmql-core.operators.uoperators/slice!
+    sort! cmql-core.operators.uoperators/sort!
+    take! cmql-core.operators.uoperators/take!
+
     ;;options
     upsert cmql-core.operators.options/upsert
     array-filters cmql-core.operators.options/array-filters
-    path cmql-core.operators.options/path
-
     ])

@@ -1,5 +1,5 @@
 (ns cmql-core.operators.uoperators
-  (:refer-clojure :exclude [+ * min max set conj pop sort])
+  (:refer-clojure :exclude [conj! pop! take!])
   (:require [ cmql-core.internal.convert.stages :refer [cmql-vector->cmql-map]]
             [cmql-core.internal.convert.qoperators :refer [remove-q-combine-fields]]
             [clojure.core :as c]))
@@ -41,7 +41,7 @@
 
 ;;-----------------------------field update operators-------------------------------------------------------------------
 
-(defn date-now
+(defn now-date!
   "Call example
    All 3 first means date {$type 'date'}
    (now-date :field1 'date' :field1 true :field1 '' :field1 'timestamp')"
@@ -54,14 +54,14 @@
     (get-function-map :currentDate args)))
 
 
-(defn u+ [& args] (get-function-map :inc args))
-(defn u* [& args] (get-function-map :mul args))
-(defn umin [& args] (get-function-map :min args))
-(defn umax [& args] (get-function-map :max args))
-(defn urename [& args] (get-function-map :rename (map name args)))
-(defn uset [& args]  (get-function-map :set args))
-(defn uset-on-insert [& args]  (get-function-map :setOnInsert args))
-(defn uunset
+(defn +! [& args] (get-function-map :inc args))
+(defn *! [& args] (get-function-map :mul args))
+(defn min! [& args] (get-function-map :min args))
+(defn max! [& args] (get-function-map :max args))
+(defn rename! [& args] (get-function-map :rename (map name args)))
+(defn set!- [& args]  (get-function-map :set args))
+(defn set-on-insert! [& args]  (get-function-map :setOnInsert args))
+(defn unset!
   "(unset 'field1' 'field2' ...)"
   [& args]
   (get-function-map :unset (interleave args (take (count args) (repeat "")))))
@@ -69,17 +69,26 @@
 
 ;;-------------------------------------------arrays---------------------------------------------------------------------
 
-(defn uconj-distinct [& args]  (get-function-map :addToSet args))
-(defn uconj [& args]  (get-function-map :push args))
-(defn upop [& args] (get-function-map :pop (flatten (into [] (cmql-vector->cmql-map args -1)))))
-(defn pull [& args] {"$pull" (apply merge (remove-q-combine-fields args))})
-(defn pull-all [& args]  (get-function-map :pullAll args))
-(defn each
+(defn conj-distinct! [& args]  (get-function-map :addToSet args))
+(defn conj! [& args]  (get-function-map :push args))
+(defn pop! [& args] (get-function-map :pop (flatten (into [] (cmql-vector->cmql-map args -1)))))
+(defn remove! [& args] {"$pull" (apply merge (remove-q-combine-fields args))})
+(defn remove-all! [& args]  (get-function-map :pullAll args))
+(defn each!
   "Used with $addToSet operator and the $push operator, to add each element
    Options can be 3 '(position n)', '(slice n)' , '(sort :field1 :!field2)'"
   ([ar & options]
    (apply (partial merge {"$each" ar}) options)))
 
-(defn position [index] {"$position" index})
-(defn slice [sliceIndex] {"$slice" sliceIndex})
-(defn usort [& args] {"$sort" (cmql-vector->cmql-map args -1)})
+(defn position! [index] {"$position" index})
+(defn slice! [sliceIndex] {"$slice" sliceIndex})
+(defn sort! [& args] {"$sort" (cmql-vector->cmql-map args -1)})
+
+
+;;-----------------------------------------project----------------------------------------------------------------------
+
+;;--------------------------------------Project-------------------------------------------------------------------------
+
+(defn take!
+  ([field n] { (name field) { "$slice" [n] }})
+  ([field start-index n] {(name field) { "$slice" [ start-index n ] } }))

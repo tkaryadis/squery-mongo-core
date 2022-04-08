@@ -60,19 +60,19 @@ aggregate(
 **Java or Clojure programmers** use cmql-j
 
 ```
-[org.cmql/cmql-core "0.1.0-SNAPSHOT"]
-[org.cmql/cmql-j "0.1.0-SNAPSHOT"]
+[org.cmql/cmql-core "0.2.0-SNAPSHOT"]
+[org.cmql/cmql-j "0.2.0-SNAPSHOT"]
 ```
 
 **JS or Clojurescript programmers** use cmql-js
 
 ```
-[org.cmql/cmql-core "0.1.0-SNAPSHOT"]
-[org.cmql/cmql-js "0.1.0-SNAPSHOT"]
+[org.cmql/cmql-core "0.2.0-SNAPSHOT"]
+[org.cmql/cmql-js "0.2.0-SNAPSHOT"]
 ```
 
 ## License
 
 Copyright © 2020,2021 Takis Karyadis.  
-Distributed under the Eclipse Public License either version 1.0.
+Distributed under the Eclipse Public License version 1.0.
 

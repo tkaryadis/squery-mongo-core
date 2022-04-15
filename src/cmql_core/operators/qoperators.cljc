@@ -139,6 +139,13 @@
    {"$__q__" { "$all" arr-value}}))
 
 (defn elem-match?
+  "Match member 
+    (elem-match? :aarray (=? avalue))
+   Match embeded
+    (elem-match? :aarray (=? :aField avalue))
+   Multiple qs can be used for more creteria
+   Project operator 
+    [:array.$]"
   ([& qs]
    (if (map? (first qs))
      {"$__q__" {"$elemMatch" (apply (partial c/merge {}) (remove-q-combine-fields qs))}}

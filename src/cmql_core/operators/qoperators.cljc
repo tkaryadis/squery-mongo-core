@@ -61,10 +61,10 @@
 ;;------------------------------------------------Logical---------------------------------------------------------------
 
 (defn not?
-  ([field value]
-   {"$__q__" {(name field) {"$not" value}}})
-  ([value]
-   {"$__q__" {"$not" value}}))
+  ([field q-operation]
+   {"$__q__" {(name field) {"$not" (get q-operation "$__q__" q-operation)}}})
+  ([q-operation]
+   {"$__q__" {"$not" (get q-operation "$__q__" q-operation)}}))
 
 (defn and? [& es]
   {"$__q__" {"$and" (remove-q-combine-fields es)}})

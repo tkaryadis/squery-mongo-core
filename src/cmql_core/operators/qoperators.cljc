@@ -140,11 +140,13 @@
 
 (defn elem-match?
   "Match member 
-    (elem-match? :aarray (=? avalue))
+    (elem-match? :ar1 (=? avalue))
    Match embeded
-    (elem-match? :aarray (=? :aField avalue))
+    (elem-match? :ar1 (=? :aField avalue))
+   Match nested arrays, i can nest them 
+    (elem-match? :ar1 (elem-match? :ar2 :avalue))
    Multiple qs can be used for more creteria
-   Project operator 
+   Project operator (doesn't work on aggregation projects)
     [:array.$]"
   ([& qs]
    (if (map? (first qs))

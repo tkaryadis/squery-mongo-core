@@ -72,7 +72,7 @@
 (defn conj-distinct! [& args]  (get-function-map :addToSet args))
 (defn conj! [& args]  (get-function-map :push args))
 (defn pop! [& args] (get-function-map :pop (flatten (into [] (cmql-vector->cmql-map args -1)))))
-(defn remove! [& args] {"$pull" (apply merge (remove-q-combine-fields args))})
+(defn remove! [& args] {"$__u__" {"$pull" (apply merge (remove-q-combine-fields args))}})
 (defn remove-all! [& args]  (get-function-map :pullAll args))
 (defn each!
   "Used with $addToSet operator and the $push operator, to add each element

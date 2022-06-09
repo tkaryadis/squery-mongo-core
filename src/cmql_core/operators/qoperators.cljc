@@ -149,9 +149,7 @@
    Project operator (doesn't work on aggregation projects)
     [:array.$]"
   ([& qs]
-   (if (map? (first qs))
-     {"$__q__" {"$elemMatch" (apply (partial c/merge {}) (remove-q-combine-fields qs))}}
-     {"$__q__" {(name (first qs)) {"$elemMatch" (apply (partial c/merge {}) (remove-q-combine-fields (rest qs)))}}})))
+   {"$__q__" {(name (first qs)) {"$elemMatch" (apply (partial c/merge {}) (remove-q-combine-fields (rest qs)))}}}))
 
 (defn count?
   ([field size]

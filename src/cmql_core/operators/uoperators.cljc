@@ -72,7 +72,19 @@
 (defn conj-distinct! [& args]  (get-function-map :addToSet args))
 (defn conj! [& args]  (get-function-map :push args))
 (defn pop! [& args] (get-function-map :pop (flatten (into [] (cmql-vector->cmql-map args -1)))))
-(defn remove! [& args] {"$__u__" {"$pull" (apply merge (remove-q-combine-fields args))}})
+
+
+(defn remove!
+  "Simple member
+    (remove! :ar1 (=? avalue))
+   Embeded
+    (remove! :ar1 (=? :afield avalue))
+   Nested (this will remove a member from the ar2, based on creteria on ar2)
+    (remove! :ar1  (elem-match? :ar2 (=? afield avalue))
+  "
+  [& args]
+  (get-function-map :pull (remove-q-combine-fields args)))
+
 (defn remove-all! [& args]  (get-function-map :pullAll args))
 (defn each!
   "Used with $addToSet operator and the $push operator, to add each element

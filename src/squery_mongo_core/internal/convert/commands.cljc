@@ -1,16 +1,16 @@
-(ns cmql-core.internal.convert.commands
-  (:require [cmql-core.internal.convert.stages :refer [cmql-addFields->mql-addFields cmql-project->mql-project]]
-            [cmql-core.internal.convert.common :refer [cmql-var-ref->mql-var-ref]]
-            [cmql-core.utils :refer [ordered-map]]
+(ns squery-mongo-core.internal.convert.commands
+  (:require [squery-mongo-core.internal.convert.stages :refer [squery-addFields->mql-addFields squery-project->mql-project]]
+            [squery-mongo-core.internal.convert.common :refer [squery-var-ref->mql-var-ref]]
+            [squery-mongo-core.utils :refer [ordered-map]]
             clojure.string
             clojure.set
-            [cmql-core.internal.convert.qoperators :refer [remove-q-combine-fields]]))
+            [squery-mongo-core.internal.convert.qoperators :refer [remove-q-combine-fields]]))
 
 ;;those are for all commands,
-(def cmql-specific-options #?(:clj #{:session :command}
+(def squery-specific-options #?(:clj #{:session :command}
                               :cljs #{:session :command :client :decode}))
 
-;;;----------------------------------cmql-pipeline->mql-pipeline---------------------------------------------------------------
+;;;----------------------------------squery-pipeline->mql-pipeline---------------------------------------------------------------
 ;;;---------------------------------------------------------------------------------------------------------------------
 
 (defn add-stage? [m]
@@ -58,12 +58,12 @@
       (first filters)
       {"$and" filters})))
 
-(defn group-add-and-to-filters [cmql-filters]
-  (loop [cmql-filters cmql-filters
+(defn group-add-and-to-filters [squery-filters]
+  (loop [squery-filters squery-filters
          qfilters []
          filters []
          grouped-filters []]
-    (if (empty? cmql-filters)
+    (if (empty? squery-filters)
       (let [grouped-filters (cond
                               (and (empty? qfilters) (empty? filters))
                               grouped-filters
@@ -76,16 +76,16 @@
         (if (= (count grouped-filters) 1)
           (first grouped-filters)
           {"$and" grouped-filters}))
-      (let [cur-filter (first cmql-filters)]
+      (let [cur-filter (first squery-filters)]
         (if (qfilter-stage? cur-filter)
           (if (empty? filters)
-            (recur (rest cmql-filters) (conj qfilters cur-filter) [] grouped-filters)
-            (recur (rest cmql-filters) (conj qfilters cur-filter) [] (conj grouped-filters (add-and-filters filters))))
+            (recur (rest squery-filters) (conj qfilters cur-filter) [] grouped-filters)
+            (recur (rest squery-filters) (conj qfilters cur-filter) [] (conj grouped-filters (add-and-filters filters))))
           (if (empty? qfilters)
-            (recur (rest cmql-filters) [] (conj filters cur-filter) grouped-filters)
-            (recur (rest cmql-filters) [] (conj filters cur-filter) (conj grouped-filters (add-and-qfilters qfilters)))))))))
+            (recur (rest squery-filters) [] (conj filters cur-filter) grouped-filters)
+            (recur (rest squery-filters) [] (conj filters cur-filter) (conj grouped-filters (add-and-qfilters qfilters)))))))))
 
-(defn cmql-filters->match-stage
+(defn squery-filters->match-stage
   "Many filters(aggregate operators) combined to a match $exprs using $and operators"
   [filters]
   {"$match" (group-add-and-to-filters filters)})
@@ -93,57 +93,57 @@
 ;;options are seperated,before this,here comes only stages never options
 ;;TODO there is no need to seperate qfilters from $expr filters,into seperate matches
 ;;but Mongodb optimizes it anyways so its not a problem also
-(defn cmql-pipeline->mql-pipeline
-  "Converts a cmql-pipeline to a mongo pipeline (1 vector with members stage operators)
+(defn squery-pipeline->mql-pipeline
+  "Converts a squery-pipeline to a mongo pipeline (1 vector with members stage operators)
    [],{}../nil  => empty stages or nil stages are removed
    [[] []] => [] []   flatten of stages (used when one stage produces more than 1 stages)
-   cmql-filters combined =>  $match stage with $and
+   squery-filters combined =>  $match stage with $and
    [] projects  => $project"
-  [cmql-pipeline]
-  (loop [cmql-pipeline cmql-pipeline
-         ;;cmql-qfilters []
-         ;;cmql-filters []
+  [squery-pipeline]
+  (loop [squery-pipeline squery-pipeline
+         ;;squery-qfilters []
+         ;;squery-filters []
          filters []
          mql-pipeline []]
-    (if (empty? cmql-pipeline)
+    (if (empty? squery-pipeline)
       (if (empty? filters)
         mql-pipeline
-        (conj mql-pipeline (cmql-filters->match-stage filters)))
-      (let [stage (first cmql-pipeline)]
+        (conj mql-pipeline (squery-filters->match-stage filters)))
+      (let [stage (first squery-pipeline)]
         (cond
 
           (or (= stage []) (nil? stage))                  ; ignore [] or nil stages
-          (recur (rest cmql-pipeline) filters mql-pipeline)
+          (recur (rest squery-pipeline) filters mql-pipeline)
 
           (qfilter-stage? stage)
-          (recur (rest cmql-pipeline) (conj filters stage) mql-pipeline)
+          (recur (rest squery-pipeline) (conj filters stage) mql-pipeline)
 
           (add-stage? stage)                             ; {:a ".." :!b ".."}
-          (let [stage (apply cmql-addFields->mql-addFields [stage])]
+          (let [stage (apply squery-addFields->mql-addFields [stage])]
             (if (vector? stage)                 ; 1 project stage might produce nested stages,put the nested and recur
-              (recur (concat stage (rest cmql-pipeline)) filters mql-pipeline) ; do what is done for nested stages(see below)
+              (recur (concat stage (rest squery-pipeline)) filters mql-pipeline) ; do what is done for nested stages(see below)
               (if (empty? filters)
-                (recur (rest cmql-pipeline) [] (conj mql-pipeline stage))
-                (recur (rest cmql-pipeline) [] (conj mql-pipeline (cmql-filters->match-stage filters) stage)))))
+                (recur (rest squery-pipeline) [] (conj mql-pipeline stage))
+                (recur (rest squery-pipeline) [] (conj mql-pipeline (squery-filters->match-stage filters) stage)))))
 
           (project-stage? stage)                             ; [:a ....]
-          (let [stage (apply cmql-project->mql-project stage)]
+          (let [stage (apply squery-project->mql-project stage)]
             (if (vector? stage)                 ; 1 project stage might produce nested stages,put the nested and recur
-              (recur (concat stage (rest cmql-pipeline)) filters mql-pipeline) ; do what is done for nested stages(see below)
+              (recur (concat stage (rest squery-pipeline)) filters mql-pipeline) ; do what is done for nested stages(see below)
               (if (empty? filters)
-                (recur (rest cmql-pipeline) [] (conj mql-pipeline stage))
-                (recur (rest cmql-pipeline) [] (conj mql-pipeline (cmql-filters->match-stage filters) stage)))))
+                (recur (rest squery-pipeline) [] (conj mql-pipeline stage))
+                (recur (rest squery-pipeline) [] (conj mql-pipeline (squery-filters->match-stage filters) stage)))))
 
           (vector? stage)      ; vector but no project = nested stage,add the members as stages and recur     ; TODO: REVIEW:
-          (recur (concat stage (rest cmql-pipeline)) filters mql-pipeline)
+          (recur (concat stage (rest squery-pipeline)) filters mql-pipeline)
 
           (stage-operator? stage)                                    ; normal stage operator {}
           (if (empty? filters)
-            (recur (rest cmql-pipeline) [] (conj mql-pipeline stage))
-            (recur (rest cmql-pipeline) [] (conj mql-pipeline (cmql-filters->match-stage filters) stage)))
+            (recur (rest squery-pipeline) [] (conj mql-pipeline stage))
+            (recur (rest squery-pipeline) [] (conj mql-pipeline (squery-filters->match-stage filters) stage)))
 
           :else                        ; filter stage (not qfilter,they are collected above)
-          (recur (rest cmql-pipeline) (conj filters stage) mql-pipeline))))))
+          (recur (rest squery-pipeline) (conj filters stage) mql-pipeline))))))
 
 
 ;;;---------------------------------------read-write--------------------------------------------------------------------
@@ -155,7 +155,7 @@
                                         (keyword k)
                                         k))
                                     (keys command-def)))
-                     cmql-specific-options))
+                     squery-specific-options))
 
 (defn update-pipeline-stage? [stage]
   (or (project-stage? stage)
@@ -202,10 +202,10 @@
                 args)
 
         ;;filters,update-pipeline will be converted using the aggregation common functions
-        ;;to do all the necessary processing cmql does
+        ;;to do all the necessary processing squery does
         ]
-    [(if (empty? filters) {} (get (first (cmql-pipeline->mql-pipeline filters)) "$match"))
-     (cmql-pipeline->mql-pipeline update-pipeline)
+    [(if (empty? filters) {} (get (first (squery-pipeline->mql-pipeline filters)) "$match"))
+     (squery-pipeline->mql-pipeline update-pipeline)
      args]))
 
 (defn args->query-updateOperators-options
@@ -239,7 +239,7 @@
                 args)
 
         ]
-    [(if (empty? filters) {} (get (first (cmql-pipeline->mql-pipeline filters)) "$match"))
+    [(if (empty? filters) {} (get (first (squery-pipeline->mql-pipeline filters)) "$match"))
      updateOperators
      args]))
 
@@ -271,12 +271,12 @@
 
 ;;-----------------------------------Final process of commmand-and Run Command------------------------------------------
 
-;;;----------------------------------scommand->mcommand(cmql-map->mql-map (command is a map))----------------------------------
-;;; cmql-map->mql-map (to make a valid mongo command) , that will be converted to Document(if java driver) and runCommand()
+;;;----------------------------------scommand->mcommand(squery-map->mql-map (command is a map))----------------------------------
+;;; squery-map->mql-map (to make a valid mongo command) , that will be converted to Document(if java driver) and runCommand()
 
-(declare cmql-map->mql-map)
+(declare squery-map->mql-map)
 
-(defn cmql-vector->mql-vector [v]
+(defn squery-vector->mql-vector [v]
   (loop [v v
          mql-vector []]
     (if (empty? v)
@@ -284,17 +284,17 @@
       (let [mb (first v)]
         (cond
           (map? mb)
-          (let [mb (cmql-map->mql-map mb )]
+          (let [mb (squery-map->mql-map mb )]
             (recur (rest v) (conj mql-vector mb)))
 
           (vector? mb)
-          (let [mb (cmql-vector->mql-vector mb )]
+          (let [mb (squery-vector->mql-vector mb )]
             (recur (rest v) (conj mql-vector mb)))
 
           :else
-          (recur (rest v) (conj mql-vector (cmql-var-ref->mql-var-ref mb))))))))
+          (recur (rest v) (conj mql-vector (squery-var-ref->mql-var-ref mb))))))))
 
-(defn cmql-map->mql-map
+(defn squery-map->mql-map
   "Converts a smongo query a valid mongo query (removes the smongo symbols)
 
    Variables
@@ -321,15 +321,15 @@
             k (if (keyword? k) (name k) k)]
         (cond
           (map? vl)
-          (let [vl (cmql-map->mql-map vl)]
+          (let [vl (squery-map->mql-map vl)]
             (recur (rest ks) (assoc mql-map k vl)))
 
           (vector? vl)
-          (let [vl (cmql-vector->mql-vector vl)]
+          (let [vl (squery-vector->mql-vector vl)]
             (recur (rest ks) (assoc mql-map k vl)))
 
           :else
-          (recur (rest ks) (assoc mql-map k (cmql-var-ref->mql-var-ref vl))))))))
+          (recur (rest ks) (assoc mql-map k (squery-var-ref->mql-var-ref vl))))))))
 
 
 ;;----------------------------db-namespaces--------------------------------------------------------------------

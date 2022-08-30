@@ -1,7 +1,7 @@
-(ns cmql-core.users
-  (:require [cmql-core.internal.convert.common :refer [single-maps]]
-            [cmql-core.internal.convert.commands :refer [cmql-map->mql-map]]
-            [cmql-core.utils :refer [keyword-map]]))
+(ns squery-mongo-core.users
+  (:require [squery-mongo-core.internal.convert.common :refer [single-maps]]
+            [squery-mongo-core.internal.convert.commands :refer [squery-map->mql-map]]
+            [squery-mongo-core.utils :refer [keyword-map]]))
 
 (def create-user-def
   {
@@ -26,14 +26,14 @@
 
 (defn create-update-user [db-name command-map update? args]
   (let [
-        cmql-map (keyword-map command-map)
+        squery-map (keyword-map command-map)
         user-name (if update?
-                    (get cmql-map :updateUser)
-                    (get cmql-map :createUser))
-        cmql-map (dissoc :updateUser :createUser)
+                    (get squery-map :updateUser)
+                    (get squery-map :createUser))
+        squery-map (dissoc :updateUser :createUser)
 
         command-head (if update? {"updateUser" user-name} {"createUser" user-name})
-        command-body (cmql-map->mql-map cmql-map)
+        command-body (squery-map->mql-map squery-map)
 
         ;- (clojure.pprint/pprint command-map)
         ]
@@ -71,10 +71,10 @@
   Requires = dropUser action"
   [db-name & args]
   (let [options-map (apply (partial merge {})args)
-        cmql-map options-map
+        squery-map options-map
 
         command-head {"dropAllUsersFromDatabase" 1}
-        command-body (cmql-map->mql-map cmql-map)]
+        command-body (squery-map->mql-map squery-map)]
     {:db db-name
      :coll nil
      :command-head command-head
@@ -86,10 +86,10 @@
   [db-name username & args]
   (let [
         options-map (apply (partial merge {})args)
-        cmql-map options-map
+        squery-map options-map
 
         command-head {"dropUser" username}
-        command-body (cmql-map->mql-map cmql-map)]
+        command-body (squery-map->mql-map squery-map)]
     {:db db-name
      :coll nil
      :command-head command-head
@@ -102,10 +102,10 @@
   [db-name username roles & args]
   (let [
         options-map (apply (partial merge {})args)
-        cmql-map (merge {:roles roles} options-map)
+        squery-map (merge {:roles roles} options-map)
 
         command-head {"grantRolesToUser" username}
-        command-body (cmql-map->mql-map cmql-map)]
+        command-body (squery-map->mql-map squery-map)]
     {:db db-name
      :coll nil
      :command-head command-head
@@ -120,10 +120,10 @@
   [db-name username roles & args]
   (let [
         options-map (apply (partial merge {})args)
-        cmql-map (merge {:roles roles} options-map)
+        squery-map (merge {:roles roles} options-map)
 
         command-head {"revokeRolesFromUser" username}
-        command-body (cmql-map->mql-map cmql-map)]
+        command-body (squery-map->mql-map squery-map)]
     {:db db-name
      :coll nil
      :command-head command-head
@@ -158,15 +158,15 @@
   "
   [db-name command-map & args]
   (let [
-        cmql-map (keyword-map command-map)
-        cmql-map (if (contains? cmql-map :filter)
-                      (assoc cmql-map :filter {"$expr" (get cmql-map :filter)})
-                      cmql-map)
+        squery-map (keyword-map command-map)
+        squery-map (if (contains? squery-map :filter)
+                      (assoc squery-map :filter {"$expr" (get squery-map :filter)})
+                      squery-map)
 
-        users-info-value (get cmql-map :usersInfo)
+        users-info-value (get squery-map :usersInfo)
 
         command-head {"usersInfo" users-info-value}
-        command-body (cmql-map->mql-map cmql-map)]
+        command-body (squery-map->mql-map squery-map)]
     {:db db-name
      :coll nil
      :command-head command-head

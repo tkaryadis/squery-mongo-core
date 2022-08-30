@@ -1,7 +1,7 @@
-(ns cmql-core.operators.uoperators
-  (:refer-clojure :exclude [conj! pop! take!])
-  (:require [ cmql-core.internal.convert.stages :refer [cmql-vector->cmql-map]]
-            [cmql-core.internal.convert.qoperators :refer [remove-q-combine-fields]]
+(ns squery-mongo-core.operators.uoperators
+  (:refer-clojure :exclude [conj! pop! ])
+  (:require [ squery-mongo-core.internal.convert.stages :refer [squery-vector->squery-map]]
+            [squery-mongo-core.internal.convert.qoperators :refer [remove-q-combine-fields]]
             [clojure.core :as c]))
 
 ;;------------------------------tools------------------------------------------------------
@@ -71,7 +71,7 @@
 
 (defn conj-distinct! [& args]  (get-function-map :addToSet args))
 (defn conj! [& args]  (get-function-map :push args))
-(defn pop! [& args] (get-function-map :pop (flatten (into [] (cmql-vector->cmql-map args -1)))))
+(defn pop! [& args] (get-function-map :pop (flatten (into [] (squery-vector->squery-map args -1)))))
 
 
 (defn remove!
@@ -94,7 +94,7 @@
 
 (defn position! [index] {"$position" index})
 (defn slice! [sliceIndex] {"$slice" sliceIndex})
-(defn sort! [& args] {"$sort" (cmql-vector->cmql-map args -1)})
+(defn sort! [& args] {"$sort" (squery-vector->squery-map args -1)})
 
 
 ;;-----------------------------------------project----------------------------------------------------------------------

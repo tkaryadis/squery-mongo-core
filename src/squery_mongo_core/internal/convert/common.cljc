@@ -1,17 +1,17 @@
-(ns cmql-core.internal.convert.common
-  (:require [cmql-core.utils :refer [keyword-map]]
+(ns squery-mongo-core.internal.convert.common
+  (:require [squery-mongo-core.utils :refer [keyword-map]]
             clojure.set))
 
 
 ;;;;----------------------------------------smongo->mongo---------------------------------------------------------------
 ;;;;-----------------convert operators/stage operators/read-write commands to valid mongo queries-----------------------
 ;;;;--------------------------------------------------------------------------------------------------------------------
-;;; order     general-helpers/operators/stage operators/pipeline/read-write/cursor/valid command(cmql-map->mql-map)
+;;; order     general-helpers/operators/stage operators/pipeline/read-write/cursor/valid command(squery-map->mql-map)
 
 ;;------------------------------------------general-helpers-------------------------------------------------------------
 
-(defn cmql-var?
-  "cmql var =  :myvar.  :myvar.afield.  OR  :.myvar :.myvar.afield
+(defn squery-var?
+  "squery var =  :myvar.  :myvar.afield.  OR  :.myvar :.myvar.afield
   The second is used mostly in paths to avoid forgeting the .
   "
   [e]
@@ -19,12 +19,12 @@
        (or (clojure.string/starts-with? (name e) ".")
            (clojure.string/ends-with? (name e) "."))))
 
-(defn cmql-var-path->cmql-var [cmql-var-path]
-  (let [var-path-str (name cmql-var-path)
+(defn squery-var-path->squery-var [squery-var-path]
+  (let [var-path-str (name squery-var-path)
         dot-index (clojure.string/index-of var-path-str ".")]
     (keyword (subs var-path-str 0 (inc dot-index)))))
 
-(defn cmql-var->mql-var [e]
+(defn squery-var->mql-var [e]
   (let [var-name (name e)
         var-name (if (clojure.string/starts-with? var-name ".")
                    (subs var-name 1)
@@ -35,11 +35,11 @@
         ]
     mql-var))
 
-(defn cmql-var-ref->mql-var-ref [e]
+(defn squery-var-ref->mql-var-ref [e]
   (cond
 
-    (cmql-var? e)
-    (cmql-var->mql-var e)
+    (squery-var? e)
+    (squery-var->mql-var e)
 
     (keyword? e)                                            ;;reference
     (str "$" (name e))                                      ; mql-ref

@@ -1,11 +1,11 @@
-(ns cmql-core.operators.stages
+(ns squery-mongo-core.operators.stages
   (:refer-clojure :exclude [sort])
-  (:require [cmql-core.internal.convert.common :refer [not-fref ]]
-            [cmql-core.internal.convert.stages :refer [cmql-vector->cmql-map cmql-addFields->mql-addFields cmql-project->mql-project]]
-            [cmql-core.internal.convert.commands :refer [cmql-pipeline->mql-pipeline split-db-namespace]]
-            [cmql-core.internal.convert.operators :refer [let-cmql-vars->map]]
-            cmql-core.operators.operators
-            [cmql-core.utils :refer [ordered-map]]))
+  (:require [squery-mongo-core.internal.convert.common :refer [not-fref ]]
+            [squery-mongo-core.internal.convert.stages :refer [squery-vector->squery-map squery-addFields->mql-addFields squery-project->mql-project]]
+            [squery-mongo-core.internal.convert.commands :refer [squery-pipeline->mql-pipeline split-db-namespace]]
+            [squery-mongo-core.internal.convert.operators :refer [let-squery-vars->map]]
+            squery-mongo-core.operators.operators
+            [squery-mongo-core.utils :refer [ordered-map]]))
 
 (defn pipeline
   "(pipeline stage1 stage2 ..) = [stage1 stage2 ...]
@@ -16,8 +16,8 @@
 ;;--------------------------------------remove-documents----------------------------------------------------------------
 (defn match
   "$match
-  No need to use it in cmql unless you want to use Query operators
-  cmql auto-generates a match stage from filters if one after another,
+  No need to use it in squery unless you want to use Query operators
+  squery auto-generates a match stage from filters if one after another,
   auto-combine them with $expr $and
   Call
   (q ....
@@ -77,7 +77,7 @@
 
 (defn add
   "$addFields
-  No need to type add in cmql
+  No need to type add in squery
   A Map literal as a pipeline stage means add
   The only situation that is useful is if the new field has the name
   of an option in the command.
@@ -90,7 +90,7 @@
   This happens anyways but not always (for example add doc on doc => merge)
   Using :!field3 i know that i will replace it"
   [& fields]
-  (apply cmql-addFields->mql-addFields fields))
+  (apply squery-addFields->mql-addFields fields))
 
 (defn set-s
   "$set
@@ -121,7 +121,7 @@
   [& fields]
   (let [fields (apply (partial merge {})fields)
         fields-keys (keys fields)
-        fields-values (map cmql-pipeline->mql-pipeline (vals fields))
+        fields-values (map squery-pipeline->mql-pipeline (vals fields))
         fields (zipmap fields-keys fields-values)]
     {"$facet" fields}))
 
@@ -136,7 +136,7 @@
 ;; {:d {"i" (literal- 1)}} ;;needs also literal
 (defn project
   "$project
-  In cmql [...] inside a pipeline is a project stage(except nested stages)
+  In squery [...] inside a pipeline is a project stage(except nested stages)
   {:f 1} means {:f (literal- 1)} so don't use it for project inside []
   If you want to use this notation use MQL directly {'$project' ....}
   Call
@@ -148,7 +148,7 @@
     [:!a :!b]         (all others will be kept)
   *i never mix keep/remove except :!_id"
   [& fields]
-  (apply cmql-project->mql-project fields))
+  (apply squery-project->mql-project fields))
 
 ;;-------------------------------------------arrays---------------------------------------------------------------------
 ;;----------------------------------------------------------------------------------------------------------------------
@@ -291,7 +291,7 @@
 
           :else
           [:_id (first (vals e)) true (first (keys e)) false])
-        accumulators (cmql-vector->cmql-map accumulators nil)    ; make it 1 map,no keywords to to replace
+        accumulators (squery-vector->squery-map accumulators nil)    ; make it 1 map,no keywords to to replace
         group-by-map (ordered-map group-field group-value)
         group-by-map (merge group-by-map accumulators)]
     (cond
@@ -382,7 +382,7 @@
    :mygroups [{:myarray id1 :myagg1 ... :myagg2 ...} {:myarray id2 :myagg1 ... :myagg2 ...}]
   }"
   ([array-ref group-field accumulators results-field]
-   (let [one-document-coll :cmql
+   (let [one-document-coll :squery
          initial-group-field (if (keyword? group-field)
                                (name group-field)
                                group-field)
@@ -390,17 +390,17 @@
          group-field-path (if (nil? group-field)
                             (keyword (str group-field-root ""))
                             (keyword (str group-field-root "." initial-group-field)))
-         add-fields-doc {results-field (cmql-core.operators.operators/let
-                                         [:v. (cmql-core.operators.operators/get :joined 0)] :v.aggr.)}]
+         add-fields-doc {results-field (squery-mongo-core.operators.operators/let
+                                         [:v. (squery-mongo-core.operators.operators/get :joined 0)] :v.aggr.)}]
      [(plookup one-document-coll                           ;; TODO make it global
                 [:myarray. array-ref]
                 (pipeline
                   ;;a check that that property we want to use exists
                   ;;not enough to check first document,slow to check all => we dont check
                   #_(if (some? initial-group-field)
-                    (cmql-core.operators.operators/let
-                      [:v. (cmql-core.operators.operators/get :myarray. 0)]
-                      (cmql-core.operators.operators/exists? (str "$$v" "." initial-group-field))))
+                    (squery-mongo-core.operators.operators/let
+                      [:v. (squery-mongo-core.operators.operators/get :myarray. 0)]
+                      (squery-mongo-core.operators.operators/exists? (str "$$v" "." initial-group-field))))
                   (facet {:aggr [{:a :myarray.}
                                  (unwind :a)
                                  (group {:_id group-field-path} accumulators)]}))
@@ -428,11 +428,11 @@
    :myagg2 .....
    }"
   [array-ref accumulators]
-  (let [one-document-coll :cmql
+  (let [one-document-coll :squery
         add-fields-doc (reduce (fn [add-fields-doc k]
-                                 (assoc add-fields-doc k (cmql-core.operators.operators/let
-                                                           [:v. (cmql-core.operators.operators/get :joined 0)
-                                                            :v1. (cmql-core.operators.operators/get :v.aggr. 0)]
+                                 (assoc add-fields-doc k (squery-mongo-core.operators.operators/let
+                                                           [:v. (squery-mongo-core.operators.operators/get :joined 0)
+                                                            :v1. (squery-mongo-core.operators.operators/get :v.aggr. 0)]
                                                            (keyword (str "v1." (name k) ".")))))
                                {}
                                (keys accumulators))]
@@ -525,7 +525,7 @@
   Call
   (sort- :a :!b)"
   [& fields]
-  (let [sort-doc (cmql-vector->cmql-map fields -1)]
+  (let [sort-doc (squery-vector->squery-map fields -1)]
     {"$sort" sort-doc}))
 
 (defn group-count-sort
@@ -581,18 +581,18 @@
   ([join-info let-vars pipeline join-result-field]
    (if-not (coll? join-info)
      (let [m {:from (name join-info)
-              :pipeline (cmql-pipeline->mql-pipeline pipeline)
+              :pipeline (squery-pipeline->mql-pipeline pipeline)
               :as (name join-result-field)}]
-       {"$lookup" (if let-vars (assoc m :let (let-cmql-vars->map let-vars)) m)})
+       {"$lookup" (if let-vars (assoc m :let (let-squery-vars->map let-vars)) m)})
      (let [this-field (name (first join-info))
            other-coll-field-path (name (second join-info))
            [other-coll other-field-path] (split-db-namespace other-coll-field-path)
            m {:from other-coll
               :localField   this-field
               :foreignField other-field-path
-              :pipeline (cmql-pipeline->mql-pipeline pipeline)
+              :pipeline (squery-pipeline->mql-pipeline pipeline)
               :as (name join-result-field)}]
-       {"$lookup" (if let-vars (assoc m :let (let-cmql-vars->map let-vars)) m)})))
+       {"$lookup" (if let-vars (assoc m :let (let-squery-vars->map let-vars)) m)})))
   ([join-info pipeline join-result-field]
    (plookup join-info nil pipeline join-result-field)))
 
@@ -698,6 +698,7 @@
    insert  (insert pipelines)
    discard (ignore pipelines)
    fail (if pipeline has ane not match fail,but no rollback)"
+   
   ([db-namespace if-match-e]
    (let [into (cond
 
@@ -716,7 +717,7 @@
          let (get if-match-e :let)
          whenMatched (get if-match-e :whenMatched)
          whenMatched (if (vector? whenMatched)              ;;in case its pipeline
-                       (cmql-pipeline->mql-pipeline whenMatched)
+                       (squery-pipeline->mql-pipeline whenMatched)
                        whenMatched)
          whenNoMatched (get if-match-e :whenNotMatched)
          merge-map {:into into}
@@ -742,7 +743,7 @@
   (if (empty? stages)
     {"$unionWith" {:coll (name coll-name)}}
     {"$unionWith" {:coll (name coll-name)
-                   :pipeline (cmql-pipeline->mql-pipeline stages)}}))
+                   :pipeline (squery-pipeline->mql-pipeline stages)}}))
 
 ;;-------------------------------------------------------count----------------------------------------------------------
 ;;----------------------------------------------------------------------------------------------------------------------

@@ -1,5 +1,5 @@
-(ns cmql-core.operators.qoperators
-  (:require [cmql-core.internal.convert.qoperators :refer [remove-q-combine-fields]]
+(ns squery-mongo-core.operators.qoperators
+  (:require [squery-mongo-core.internal.convert.qoperators :refer [remove-q-combine-fields]]
             [clojure.core :as c]))
 
 ;;geo bitwise TODO

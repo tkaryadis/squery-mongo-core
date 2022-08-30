@@ -1,16 +1,16 @@
-(ns cmql-core.internal.convert.stages
-  (:require [cmql-core.internal.convert.common :refer [single-maps]]
-            [cmql-core.utils :refer [ordered-map]]))
+(ns squery-mongo-core.internal.convert.stages
+  (:require [squery-mongo-core.internal.convert.common :refer [single-maps]]
+            [squery-mongo-core.utils :refer [ordered-map]]))
 
 
 ;;;------------------------------------------stages---------------------------------------------------------------------
 ;;;---------------------------------------------------------------------------------------------------------------------
 
 ;;helper used in Sort/Project/Index
-(defn cmql-vector->cmql-map
+(defn squery-vector->squery-map
   "Used in Sort/Project/Index
    makes the members maps(if they are :k or :!k),and merge all to 1 map
-   cmql-vector = [:k1 :!k2 :k3 {:k4 ''}] => {:k1 1 :k2 v :k3 1 {:k4 ''}}
+   squery-vector = [:k1 :!k2 :k3 {:k4 ''}] => {:k1 1 :k2 v :k3 1 {:k4 ''}}
    Used in sort/project/index etc, in sort v=-1,in project v=0
    Adds literal,can't be used as normal mongo project {:field 1} means here {:field (literal- 1)}"
   [fields replace-v]
@@ -42,8 +42,8 @@
           {}
           fields))
 
-(defn cmql-project->mql-project
-  "cmql-project
+(defn squery-project->mql-project
+  "squery-project
      [:a :!_id {:c ''} {:!d ''}]
      keep a
      dont keep _id
@@ -55,7 +55,7 @@
         replaced-fields (replaced-fields fields)
         replaced-fields-parents (map (fn [f] (first (clojure.string/split f #"\.")))
                                      replaced-fields)
-        project-doc (cmql-vector->cmql-map fields 0)
+        project-doc (squery-vector->squery-map fields 0)
         ]
     (if (not (empty? replaced-fields))
       [
@@ -70,7 +70,7 @@
        ]
       {"$project" project-doc})))
 
-(defn cmql-addFields->mql-addFields
+(defn squery-addFields->mql-addFields
   "fields = [{:c ''} {:!d ''}]
    add :c
    replace :d (its always replace by default except add document to array place)
@@ -83,7 +83,7 @@
         ;;solution = change it so temp fields are never nested
         replaced-fields-parents (map (fn [f] (first (clojure.string/split f #"\.")))
                                     replaced-fields)
-        add-doc (cmql-vector->cmql-map fields nil)]                 ;;make 1 map,no keyword replacement
+        add-doc (squery-vector->squery-map fields nil)]                 ;;make 1 map,no keyword replacement
     (if (not (empty? replaced-fields))
       [
        ;;add with the !names

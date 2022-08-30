@@ -1,4 +1,4 @@
-## cMQL
+## SQuery
 
 - query and data processing language for MongoDB
 - up to **3x** less code
@@ -8,13 +8,13 @@
 Usage
 
 - as tool to **generate MQL** usable from all drivers
-- to **call cMQL** code directly from Java/NodeJS/Clojure/Clojurescript
+- to **call SQuery** code directly from Java/NodeJS/Clojure/Clojurescript
 
 ## Getting Started
 
-- [Documentation](https://cmql.org/)
-- [**Try it online, see many examples**](https://cmql.org/play)
-- [cMQL chat server](https://discord.gg/zWDzp4B7Bf)
+- [Documentation](https://squery.org/)
+- [**Try it online, see many examples**](https://squery.org/playmongo)
+- [SQuery chat server](https://discord.gg/zWDzp4B7Bf)
 
 ## Example
 
@@ -42,37 +42,36 @@ aggregate(
  {"$limit": 1}])
 ```
 
-## cMQL projects
+## SQuery projects
 
-- [org.cmql/cmql-core](https://github.com/tkaryadis/cmql-core)
-- [org.cmql/cmql-j](https://github.com/tkaryadis/cmql-j)
-- [org.cmql/cmql-js](https://github.com/tkaryadis/cmql-js)
+- [org.squery/squery-core](https://github.com/tkaryadis/squery-mongo-core)
+- [org.squery/squery-j](https://github.com/tkaryadis/squery-mongo-j)
+- [org.squery/squery-js](https://github.com/tkaryadis/squery-mongo-js)
 
-**cMQL example apps**
+**SQuery example apps**
 
-- [Clojure](https://github.com/tkaryadis/cmql-app-clj)
-- [Java](https://github.com/tkaryadis/cmql-app-j)
-- [Clojurescript](https://github.com/tkaryadis/cmql-app-cljs)
-- [NodeJS](https://github.com/tkaryadis/cmql-app-js)
+- [Clojure](https://github.com/tkaryadis/squery-mongo-app-clj)
+- [Java](https://github.com/tkaryadis/squery-mongo-app-j)
+- [Clojurescript](https://github.com/tkaryadis/squery-mongo-app-cljs)
+- [NodeJS](https://github.com/tkaryadis/squery-mongo-app-js)
 
 ## Leiningen dependencies
 
-**Java or Clojure programmers** use cmql-j
+**Java or Clojure programmers** use squery-mongo-j
 
 ```
-[org.cmql/cmql-core "0.2.0-SNAPSHOT"]
-[org.cmql/cmql-j "0.2.0-SNAPSHOT"]
+[org.squery/squery-mongo-core "0.2.0-SNAPSHOT"]
+[org.squery/squery-mongo-j "0.2.0-SNAPSHOT"]
 ```
 
-**JS or Clojurescript programmers** use cmql-js
+**JS or Clojurescript programmers** use squery-mongo-js
 
 ```
-[org.cmql/cmql-core "0.2.0-SNAPSHOT"]
-[org.cmql/cmql-js "0.2.0-SNAPSHOT"]
+[org.squery/squery-mongo-core "0.2.0-SNAPSHOT"]
+[org.squery/squery-mongo-js "0.2.0-SNAPSHOT"]
 ```
 
 ## License
 
 Copyright © 2020,2022 Takis Karyadis.  
 Distributed under the Eclipse Public License version 1.0.
-

@@ -1,9 +1,9 @@
-(ns cmql-core.administration
-  (:require [cmql-core.internal.convert.common :refer [single-maps ]]
-            [cmql-core.internal.convert.commands :refer [command-keys get-pipeline-options cmql-pipeline->mql-pipeline
-                                                   cmql-map->mql-map split-db-namespace]]
-            [cmql-core.internal.convert.stages :refer [cmql-vector->cmql-map]]
-            [cmql-core.utils :refer [keyword-map]]))
+(ns squery-mongo-core.administration
+  (:require [squery-mongo-core.internal.convert.common :refer [single-maps ]]
+            [squery-mongo-core.internal.convert.commands :refer [command-keys get-pipeline-options squery-pipeline->mql-pipeline
+                                                   squery-map->mql-map split-db-namespace]]
+            [squery-mongo-core.internal.convert.stages :refer [squery-vector->squery-map]]
+            [squery-mongo-core.utils :refer [keyword-map]]))
 
 ;;-------------------------------------Collection/Indexes/Views---------------------------------------------------------
 ;;----------------------------------------------------------------------------------------------------------------------
@@ -52,13 +52,13 @@
         command-keys (command-keys create-def)
         args (single-maps args command-keys)
         [pipeline args] (get-pipeline-options args command-keys)
-        pipeline (cmql-pipeline->mql-pipeline pipeline)
+        pipeline (squery-pipeline->mql-pipeline pipeline)
         args (conj args {:viewOn (name coll-name)} {:pipeline pipeline})
 
-        cmql-map (apply (partial merge {}) args)
+        squery-map (apply (partial merge {}) args)
 
         command-head {"create" (name new-view-name)}
-        command-body (cmql-map->mql-map cmql-map)
+        command-body (squery-map->mql-map squery-map)
 
 
         ;- (clojure.pprint/pprint command-map)
@@ -72,10 +72,10 @@
 (defn create-collection [db-namespace & args]
   (let [
         [db-name coll-name] (split-db-namespace db-namespace)
-        cmql-map (apply (partial merge {})args)
+        squery-map (apply (partial merge {})args)
 
         command-head {"create" coll-name}
-        command-body (cmql-map->mql-map cmql-map)
+        command-body (squery-map->mql-map squery-map)
         ;- (clojure.pprint/pprint command-map)
         ]
     {:db db-name
@@ -99,9 +99,9 @@
   (let [db-name "admin"
         args (conj args {:to (name target-db-namespace)})
 
-        cmql-map (apply (partial merge {}) args)
+        squery-map (apply (partial merge {}) args)
         command-head {"renameCollection" (name source-db-namespace)}
-        command-body (cmql-map->mql-map cmql-map)]
+        command-body (squery-map->mql-map squery-map)]
     {:db db-name
      :coll nil
      :command-head command-head
@@ -120,10 +120,10 @@
   [db-namespace & args]
   (let [
         [db-name coll-name] (split-db-namespace db-namespace)
-        cmql-map (apply (partial merge {}) args)
+        squery-map (apply (partial merge {}) args)
 
         command-head {"drop" coll-name}
-        command-body (cmql-map->mql-map cmql-map)]
+        command-body (squery-map->mql-map squery-map)]
     {:db db-name
      :coll coll-name
      :command-head command-head
@@ -142,12 +142,12 @@
   "Returns cursor with collection info"
   [db-name & args]
   (let [db-name (name db-name)
-        cmql-map (if (contains? args :filter)
+        squery-map (if (contains? args :filter)
                   (assoc args :filter {"$expr" (get args :filter)})
                   args)
 
         command-head {"listCollections" 1}
-        command-body (cmql-map->mql-map cmql-map)]
+        command-body (squery-map->mql-map squery-map)]
     {:db db-name
      :coll nil
      :command-head command-head
@@ -214,7 +214,7 @@
   Call
   (index [:field1 :!field2 ..]) "
   [keys-vec & args]
-  (let [index-sorted-map (cmql-vector->cmql-map (mapv (fn [k]
+  (let [index-sorted-map (squery-vector->squery-map (mapv (fn [k]
                                                   (if (vector? k) (into {} [k]) k))
                                                 keys-vec)
                                           -1)
@@ -239,10 +239,10 @@
                                   [[] []]
                                   args)
         options-map (apply (partial merge {}) options)
-        cmql-map (merge {:indexes indexes} options-map)
+        squery-map (merge {:indexes indexes} options-map)
 
         command-head {"createIndexes" coll-name}
-        command-body (cmql-map->mql-map cmql-map)
+        command-body (squery-map->mql-map squery-map)
 
         ;- (clojure.pprint/pprint command-map)
         ]
@@ -278,7 +278,7 @@
                         "*"
                         (mapv (fn [index-name]
                                 (if (vector? index-name)
-                                  (let [index-sorted-map (cmql-vector->cmql-map (mapv (fn [k]
+                                  (let [index-sorted-map (squery-vector->squery-map (mapv (fn [k]
                                                                                   (if (vector? k) (into {} [k]) k))
                                                                                 index-name)
                                                                           -1)
@@ -288,10 +288,10 @@
                               indexnames-key-vecs))
 
         options-map (apply (partial merge {}) options)
-        cmql-map (merge {:index index-names} options-map)
+        squery-map (merge {:index index-names} options-map)
 
         command-head {"dropIndexes" coll-name}
-        command-body (cmql-map->mql-map cmql-map)
+        command-body (squery-map->mql-map squery-map)
 
         ;- (clojure.pprint/pprint command-map)
         ]
@@ -346,9 +346,9 @@
                            []
                            (flatten args))]
     (if-not (empty? cursor-ids)
-      (let [cmql-map {:cursors cursor-ids}
+      (let [squery-map {:cursors cursor-ids}
             command-head {"killCursors" coll-name}
-            command-body (cmql-map->mql-map cmql-map)]
+            command-body (squery-map->mql-map squery-map)]
         {:db db-name
          :coll coll-name
          :command-head command-head
@@ -374,10 +374,10 @@
 
 (defn drop-database [db-name & args]
   (let [db-name (name db-name)
-        cmql-map (apply (partial merge {}) args)
+        squery-map (apply (partial merge {}) args)
 
         command-head {"dropDatabase" 1}
-        command-body (cmql-map->mql-map cmql-map)]
+        command-body (squery-map->mql-map squery-map)]
     {:db db-name
      :coll nil
      :command-head command-head
@@ -398,15 +398,15 @@
   [& args]
   (let [db-name "admin"
         args (map keyword-map args)          ; i need it to safe check :filter bellow
-        cmql-map (if (some? (first args))
+        squery-map (if (some? (first args))
                   (first args)
                   {})
-        cmql-map (if (contains? cmql-map :filter)
-                      (assoc cmql-map :filter {"$expr" (get cmql-map :filter)})
-                      cmql-map)
+        squery-map (if (contains? squery-map :filter)
+                      (assoc squery-map :filter {"$expr" (get squery-map :filter)})
+                      squery-map)
 
         command-head {"listDatabases" 1}
-        command-body (cmql-map->mql-map cmql-map)]
+        command-body (squery-map->mql-map squery-map)]
     {:db db-name
      :coll nil
      :command-head command-head
@@ -425,10 +425,10 @@
         args (single-maps args command-keys)
         db-name "admin"
         options-map (apply (partial merge {})args)
-        cmql-map options-map
+        squery-map options-map
 
         command-head {"shutdown" 1}
-        command-body (cmql-map->mql-map cmql-map)]
+        command-body (squery-map->mql-map squery-map)]
     {:db db-name
      :coll nil
      :command-head command-head
@@ -443,10 +443,10 @@
   [& args]
   (let [
         db-name "admin"
-        cmql-map (apply (partial merge {}) args)
+        squery-map (apply (partial merge {}) args)
 
         command-head {"currentOp" 1}
-        command-body (cmql-map->mql-map cmql-map)]
+        command-body (squery-map->mql-map squery-map)]
     {:db db-name
      :coll nil
      :command-head command-head
@@ -454,11 +454,11 @@
 
 (defn kill-op [opid-number & args]
   (let [db-name "admin"
-        cmql-map (if (empty? args)
+        squery-map (if (empty? args)
                   {:op opid-number}
                   {:op opid-number :comment args})
         command-head {"killOp" 1}
-        command-body (cmql-map->mql-map cmql-map)]
+        command-body (squery-map->mql-map squery-map)]
     {:db db-name
      :coll nil
      :command-head command-head

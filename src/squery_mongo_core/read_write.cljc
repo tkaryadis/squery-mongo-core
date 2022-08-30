@@ -1,12 +1,12 @@
-(ns cmql-core.read-write
-  (:require [cmql-core.utils :refer [ordered-map]]
-            [cmql-core.internal.convert.common :refer [single-maps]]
-            [cmql-core.internal.convert.commands :refer
+(ns squery-mongo-core.read-write
+  (:require [squery-mongo-core.utils :refer [ordered-map]]
+            [squery-mongo-core.internal.convert.common :refer [single-maps]]
+            [squery-mongo-core.internal.convert.commands :refer
              [split-db-namespace
-              command-keys get-pipeline-options cmql-pipeline->mql-pipeline
+              command-keys get-pipeline-options squery-pipeline->mql-pipeline
               args->query-updatePipeline-options args->query-updateOperators-options upsert-doc seperate-bulk
-              cmql-map->mql-map]]
-            cmql-core.operators.operators))
+              squery-map->mql-map]]
+            squery-mongo-core.operators.operators))
 
 ;;also i want to be able to take a raw-mongo-command(only the necessary args and the rest in a map) and run it
 
@@ -32,7 +32,7 @@
         command-keys (command-keys insert-def)
         args (single-maps args command-keys)
         documents (if (map? documents) [documents] documents)
-        mql-map (cmql-map->mql-map (apply (partial merge {}) args))
+        mql-map (squery-map->mql-map (apply (partial merge {}) args))
 
         command-head {"insert" coll-name}
         command-body (merge {"documents" documents} mql-map)
@@ -87,7 +87,7 @@
         deletes (mapv (fn [m] (get m :dq)) deletes)
 
         command-body (apply (partial merge {}) (conj options {:deletes deletes}))
-        command-body (cmql-map->mql-map command-body)
+        command-body (squery-map->mql-map command-body)
         command-head  {"delete" coll-name}
 
         ;- (clojure.pprint/pprint command-body)
@@ -238,13 +238,13 @@
                                pipeline)
 
         args (concat args stages-to-options)
-        cmql-map (apply (partial merge {}) args)
-        cmql-map (if (contains? cmql-map :maxTimeMS)
-                       cmql-map
-                      (assoc cmql-map :maxTimeMS 0))
+        squery-map (apply (partial merge {}) args)
+        squery-map (if (contains? squery-map :maxTimeMS)
+                       squery-map
+                      (assoc squery-map :maxTimeMS 0))
 
         command-head {"find" coll-name}
-        command-body (cmql-map->mql-map cmql-map)
+        command-body (squery-map->mql-map squery-map)
 
         ;- (clojure.pprint/pprint command-doc)
         ]
@@ -331,11 +331,11 @@
         [updates options] (seperate-bulk :uq args)
         updates (mapv (fn [m] (get m :uq)) updates)
 
-        cmql-map (apply (partial merge {}) (conj options {:updates updates}))
+        squery-map (apply (partial merge {}) (conj options {:updates updates}))
 
         command-head {"update" coll-name}
 
-        command-body (cmql-map->mql-map cmql-map)
+        command-body (squery-map->mql-map squery-map)
         ]
     {:db db-name
      :coll coll-name
@@ -415,10 +415,10 @@
         args (conj args (if (empty? query) {} {:query query}))
         args (conj args (if (empty? update-operators) {} {:update update-operators}))
 
-        cmql-map (apply (partial merge {}) args)
+        squery-map (apply (partial merge {}) args)
 
         command-head {"findAndModify" coll-name}
-        command-body (cmql-map->mql-map cmql-map)
+        command-body (squery-map->mql-map squery-map)
 
         ;- (clojure.pprint/pprint command-map)
         ]
@@ -496,20 +496,20 @@
         command-keys (command-keys aggregate-def)
         args (single-maps args command-keys)
         [pipeline args] (get-pipeline-options args command-keys)
-        pipeline (cmql-pipeline->mql-pipeline pipeline)
+        pipeline (squery-pipeline->mql-pipeline pipeline)
         args (conj args {:pipeline (into [] pipeline)})
-        cmql-map (apply (partial merge {}) args)
+        squery-map (apply (partial merge {}) args)
 
-        cmql-map (if (contains? cmql-map :cursor)
-                   cmql-map
-                   (assoc cmql-map :cursor {}))
+        squery-map (if (contains? squery-map :cursor)
+                   squery-map
+                   (assoc squery-map :cursor {}))
 
-        cmql-map (if (contains? cmql-map :maxTimeMS)
-                   cmql-map
-                   (assoc cmql-map :maxTimeMS (* 20 60 1000))) ;;5 minute alive max
+        squery-map (if (contains? squery-map :maxTimeMS)
+                   squery-map
+                   (assoc squery-map :maxTimeMS (* 20 60 1000))) ;;5 minute alive max
 
         command-head {"aggregate" coll-name}
-        command-body (cmql-map->mql-map cmql-map)
+        command-body (squery-map->mql-map squery-map)
         ]
     {:db db-name
      :coll coll-name
@@ -570,10 +570,10 @@
         args (concat args stages-to-options)
         args (conj args (if (empty? query) {} {:query query}))
 
-        cmql-map (apply (partial merge {}) args)
+        squery-map (apply (partial merge {}) args)
 
         command-head {"count" coll-name}
-        command-body (cmql-map->mql-map cmql-map)
+        command-body (squery-map->mql-map squery-map)
 
         ;- (clojure.pprint/pprint command-map)
         ]
@@ -613,11 +613,11 @@
         [query _ args] (args->query-updatePipeline-options args command-keys)
         args (conj args (if (empty? query) {} {:query query}))
 
-        cmql-map (apply (partial merge {}) args)
+        squery-map (apply (partial merge {}) args)
 
         command-head {"distinct" coll-name}
 
-        command-body (cmql-map->mql-map cmql-map)
+        command-body (squery-map->mql-map squery-map)
 
         ;- (clojure.pprint/pprint command-map)
         ]

@@ -1,6 +1,6 @@
-(ns cmql-core.internal.convert.js-functions
+(ns squery-mongo-core.internal.convert.js-functions
   (:require  clojure.string
-             [cmql-core.utils :refer [make-dir delete-dir path-str file-exist? run-shell-command
+             [squery-mongo-core.utils :refer [make-dir delete-dir path-str file-exist? run-shell-command
                                          read-file read-file-read-string write-file get-cwd]]))
 
 (defn js-body [& strings]

@@ -1,6 +1,6 @@
-(ns cmql-core.diagnostic
-  (:require [cmql-core.internal.convert.commands :refer [cmql-map->mql-map split-db-namespace]]
-            [cmql-core.internal.convert.stages :refer [cmql-vector->cmql-map]]))
+(ns squery-mongo-core.diagnostic
+  (:require [squery-mongo-core.internal.convert.commands :refer [squery-map->mql-map split-db-namespace]]
+            [squery-mongo-core.internal.convert.stages :refer [squery-vector->squery-map]]))
 
 (def coll-stats-def
   {
@@ -23,7 +23,7 @@
                    ["b"]
                    args)
 
-         cmql-map (let [option (first options)]
+         squery-map (let [option (first options)]
                        (if (map? option)
                          option
                          (cond (= (clojure.string/lower-case (name option)) "b")
@@ -42,7 +42,7 @@
                                {:scale 1})))
 
          command-head {"collStats" coll-name}
-         command-body (cmql-map->mql-map cmql-map)]
+         command-body (squery-map->mql-map squery-map)]
      {:db db-name
       :coll coll-name
       :command-head command-head
@@ -71,7 +71,7 @@
 
 (defn validate [db-namespace & args]
   (let [[db-name coll-name] (split-db-namespace db-namespace)
-        cmql-map (cond
+        squery-map (cond
                   (or (empty? args) (= (first args) false))
                   {:full false}
 
@@ -82,7 +82,7 @@
                   {:full false})
 
         command-head {"validate" coll-name}
-        command-body (cmql-map->mql-map cmql-map)]
+        command-body (squery-map->mql-map squery-map)]
     {:db db-name
      :coll coll-name
      :command-head command-head
@@ -105,11 +105,11 @@
   [& args]
   (let [
         db-name "admin"
-        fields-map (cmql-vector->cmql-map args 0)
-        cmql-map fields-map
+        fields-map (squery-vector->squery-map args 0)
+        squery-map fields-map
 
         command-head {"serverStatus" 1}
-        command-body (cmql-map->mql-map cmql-map)]
+        command-body (squery-map->mql-map squery-map)]
     {:db db-name
      :coll nil
      :command-head command-head

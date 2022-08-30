@@ -1,4 +1,4 @@
-(ns cmql-core.utils
+(ns squery-mongo-core.utils
   #?(:clj (:require clojure.repl
                     flatland.ordered.map
                     [tupelo.misc :refer [shell-cmd]]

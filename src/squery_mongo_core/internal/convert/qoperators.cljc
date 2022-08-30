@@ -1,4 +1,4 @@
-(ns cmql-core.internal.convert.qoperators)
+(ns squery-mongo-core.internal.convert.qoperators)
 
 (defn remove-q-combine-fields [es]
   (let [es (mapv (fn [m] (if (and (map? m)

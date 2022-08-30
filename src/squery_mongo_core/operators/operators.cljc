@@ -1,4 +1,4 @@
-(ns cmql-core.operators.operators
+(ns squery-mongo-core.operators.operators
   (:refer-clojure :exclude [+ inc - dec * mod
                             = not= > >= < <=
                             and or not nor
@@ -11,10 +11,10 @@
                             first last merge max min
                             str subs re-find re-matcher re-seq replace identity])
   (:require [clojure.core :as c]
-            [cmql-core.internal.convert.common :refer [args->nested-2args cmql-var-ref->mql-var-ref]]
-            [cmql-core.internal.convert.operators :refer [cmql-var-name get-nested-lets get-lets]]
-            [cmql-core.internal.convert.js-functions :refer [compile-library js-args-body js-info]]
-            [cmql-core.utils :refer [ordered-map]]))
+            [squery-mongo-core.internal.convert.common :refer [args->nested-2args squery-var-ref->mql-var-ref]]
+            [squery-mongo-core.internal.convert.operators :refer [squery-var-name get-nested-lets get-lets]]
+            [squery-mongo-core.internal.convert.js-functions :refer [compile-library js-args-body js-info]]
+            [squery-mongo-core.utils :refer [ordered-map]]))
 
 ;;---------------------------Arithmetic-------------------------------------
 ;;--------------------------------------------------------------------------
@@ -474,7 +474,7 @@
   Call
   (leti- [:v1- e1 :v2- e2] e)"
   [vars body]
-  (cmql-core.internal.convert.operators/leti vars body))
+  (squery-mongo-core.internal.convert.operators/leti vars body))
 
 (defn let
   "$let
@@ -940,7 +940,7 @@
   Limit cases
    start>count => empty array (slice do that alone)
   Doesn't do circles if index>count,just takes till the end
-  cMQL's take works like slice,see take"
+  squery's take works like slice,see take"
   ([e-array start-e-n end-e-n]
    (if- (= start-e-n end-e-n)
         []
@@ -1077,7 +1077,7 @@
   [args body]
   (if (c/= (c/count args) 1)  ;;map or filter
     ;; i wrap them in a special map to know its a fn- type map
-    {:mongo-fn [(vec (c/map cmql-var-name args)) (cmql-var-ref->mql-var-ref body)]}
+    {:mongo-fn [(vec (c/map squery-var-name args)) (squery-var-ref->mql-var-ref body)]}
     ;;reduce
     {:mongo-reduce-fn
      (c/let [arguments []
@@ -1716,283 +1716,283 @@
 
 
 (def operators-mappings
-  '[+ cmql-core.operators.operators/+
-    inc cmql-core.operators.operators/inc
-    - cmql-core.operators.operators/-
-    dec cmql-core.operators.operators/dec
-    * cmql-core.operators.operators/*
-    mod cmql-core.operators.operators/mod
-    = cmql-core.operators.operators/=
-    not= cmql-core.operators.operators/not=
-    > cmql-core.operators.operators/>
-    >= cmql-core.operators.operators/>=
-    < cmql-core.operators.operators/<
-    <= cmql-core.operators.operators/<=
-    and cmql-core.operators.operators/and
-    or cmql-core.operators.operators/or
-    not cmql-core.operators.operators/not
-    nor cmql-core.operators.operators/nor
-    if-not cmql-core.operators.operators/if-not
-    cond cmql-core.operators.operators/cond
-    into cmql-core.operators.operators/into
-    type cmql-core.operators.operators/type
-    boolean cmql-core.operators.operators/boolean
-    double cmql-core.operators.operators/double
-    int cmql-core.operators.operators/int
-    long cmql-core.operators.operators/long
-    string cmql-core.operators.operators/string
-    exists? cmql-core.operators.operators/exists?
-    nil? cmql-core.operators.operators/nil?
-    not-value? cmql-core.operators.operators/not-value?
-    some? cmql-core.operators.operators/some?
-    value? cmql-core.operators.operators/value?
-    true? cmql-core.operators.operators/true?
-    false? cmql-core.operators.operators/false?
-    array? cmql-core.operators.operators/array?
-    object? cmql-core.operators.operators/object?
-    regex? cmql-core.operators.operators/regex?
-    string? cmql-core.operators.operators/string?
-    int? cmql-core.operators.operators/int?
-    long? cmql-core.operators.operators/long?
-    decimal? cmql-core.operators.operators/decimal?
-    double? cmql-core.operators.operators/double?
-    boolean? cmql-core.operators.operators/boolean?
-    number? cmql-core.operators.operators/number?
-    rand cmql-core.operators.operators/rand
-    let cmql-core.operators.operators/let
-    identity cmql-core.operators.operators/identity
-    get cmql-core.operators.operators/get
-    get-in cmql-core.operators.operators/get-in
-    assoc cmql-core.operators.operators/assoc
-    assoc-in cmql-core.operators.operators/assoc-in
-    dissoc  cmql-core.operators.operators/dissoc
-    dissoc-in  cmql-core.operators.operators/dissoc-in
-    concat cmql-core.operators.operators/concat
-    conj cmql-core.operators.operators/conj
-    contains? cmql-core.operators.operators/contains?
-    range cmql-core.operators.operators/range
-    reverse cmql-core.operators.operators/reverse
-    count cmql-core.operators.operators/count
-    take cmql-core.operators.operators/take
-    subvec cmql-core.operators.operators/subvec
-    empty? cmql-core.operators.operators/empty?
-    conj-distinct cmql-core.operators.operators/conj-distinct
-    fn cmql-core.operators.operators/fn
-    map cmql-core.operators.operators/map
-    filter cmql-core.operators.operators/filter
-    reduce cmql-core.operators.operators/reduce
-    bson-size cmql-core.operators.operators/bson-size
-    first cmql-core.operators.operators/first
-    last cmql-core.operators.operators/last
-    merge cmql-core.operators.operators/merge
-    max cmql-core.operators.operators/max
-    min cmql-core.operators.operators/min
-    str cmql-core.operators.operators/str
-    subs cmql-core.operators.operators/subs
-    take-str cmql-core.operators.operators/take-str
-    re-find cmql-core.operators.operators/re-find
-    re-find? cmql-core.operators.operators/re-find?
-    re-seq cmql-core.operators.operators/re-seq
-    replace cmql-core.operators.operators/replace
-    replace-all cmql-core.operators.operators/replace-all
+  '[+ squery-mongo-core.operators.operators/+
+    inc squery-mongo-core.operators.operators/inc
+    - squery-mongo-core.operators.operators/-
+    dec squery-mongo-core.operators.operators/dec
+    * squery-mongo-core.operators.operators/*
+    mod squery-mongo-core.operators.operators/mod
+    = squery-mongo-core.operators.operators/=
+    not= squery-mongo-core.operators.operators/not=
+    > squery-mongo-core.operators.operators/>
+    >= squery-mongo-core.operators.operators/>=
+    < squery-mongo-core.operators.operators/<
+    <= squery-mongo-core.operators.operators/<=
+    and squery-mongo-core.operators.operators/and
+    or squery-mongo-core.operators.operators/or
+    not squery-mongo-core.operators.operators/not
+    nor squery-mongo-core.operators.operators/nor
+    if-not squery-mongo-core.operators.operators/if-not
+    cond squery-mongo-core.operators.operators/cond
+    into squery-mongo-core.operators.operators/into
+    type squery-mongo-core.operators.operators/type
+    boolean squery-mongo-core.operators.operators/boolean
+    double squery-mongo-core.operators.operators/double
+    int squery-mongo-core.operators.operators/int
+    long squery-mongo-core.operators.operators/long
+    string squery-mongo-core.operators.operators/string
+    exists? squery-mongo-core.operators.operators/exists?
+    nil? squery-mongo-core.operators.operators/nil?
+    not-value? squery-mongo-core.operators.operators/not-value?
+    some? squery-mongo-core.operators.operators/some?
+    value? squery-mongo-core.operators.operators/value?
+    true? squery-mongo-core.operators.operators/true?
+    false? squery-mongo-core.operators.operators/false?
+    array? squery-mongo-core.operators.operators/array?
+    object? squery-mongo-core.operators.operators/object?
+    regex? squery-mongo-core.operators.operators/regex?
+    string? squery-mongo-core.operators.operators/string?
+    int? squery-mongo-core.operators.operators/int?
+    long? squery-mongo-core.operators.operators/long?
+    decimal? squery-mongo-core.operators.operators/decimal?
+    double? squery-mongo-core.operators.operators/double?
+    boolean? squery-mongo-core.operators.operators/boolean?
+    number? squery-mongo-core.operators.operators/number?
+    rand squery-mongo-core.operators.operators/rand
+    let squery-mongo-core.operators.operators/let
+    identity squery-mongo-core.operators.operators/identity
+    get squery-mongo-core.operators.operators/get
+    get-in squery-mongo-core.operators.operators/get-in
+    assoc squery-mongo-core.operators.operators/assoc
+    assoc-in squery-mongo-core.operators.operators/assoc-in
+    dissoc  squery-mongo-core.operators.operators/dissoc
+    dissoc-in  squery-mongo-core.operators.operators/dissoc-in
+    concat squery-mongo-core.operators.operators/concat
+    conj squery-mongo-core.operators.operators/conj
+    contains? squery-mongo-core.operators.operators/contains?
+    range squery-mongo-core.operators.operators/range
+    reverse squery-mongo-core.operators.operators/reverse
+    count squery-mongo-core.operators.operators/count
+    take squery-mongo-core.operators.operators/take
+    subvec squery-mongo-core.operators.operators/subvec
+    empty? squery-mongo-core.operators.operators/empty?
+    conj-distinct squery-mongo-core.operators.operators/conj-distinct
+    fn squery-mongo-core.operators.operators/fn
+    map squery-mongo-core.operators.operators/map
+    filter squery-mongo-core.operators.operators/filter
+    reduce squery-mongo-core.operators.operators/reduce
+    bson-size squery-mongo-core.operators.operators/bson-size
+    first squery-mongo-core.operators.operators/first
+    last squery-mongo-core.operators.operators/last
+    merge squery-mongo-core.operators.operators/merge
+    max squery-mongo-core.operators.operators/max
+    min squery-mongo-core.operators.operators/min
+    str squery-mongo-core.operators.operators/str
+    subs squery-mongo-core.operators.operators/subs
+    take-str squery-mongo-core.operators.operators/take-str
+    re-find squery-mongo-core.operators.operators/re-find
+    re-find? squery-mongo-core.operators.operators/re-find?
+    re-seq squery-mongo-core.operators.operators/re-seq
+    replace squery-mongo-core.operators.operators/replace
+    replace-all squery-mongo-core.operators.operators/replace-all
 
     ;;Not clojure overides
 
-    abs cmql-core.operators.operators/abs
-    pow cmql-core.operators.operators/pow
-    exp cmql-core.operators.operators/exp
-    ln  cmql-core.operators.operators/ln
-    log cmql-core.operators.operators/log
-    ceil cmql-core.operators.operators/ceil
-    floor cmql-core.operators.operators/floor
-    round cmql-core.operators.operators/round
-    trunc cmql-core.operators.operators/trunc
-    sqrt cmql-core.operators.operators/sqrt
-    mod cmql-core.operators.operators/mod
-    div cmql-core.operators.operators/div
-    cmp cmql-core.operators.operators/cmp
-    if- cmql-core.operators.operators/if-
-    if-not-value cmql-core.operators.operators/if-not-value
-    literal cmql-core.operators.operators/literal
-    expr cmql-core.operators.operators/expr
-    convert cmql-core.operators.operators/convert
-    boolean cmql-core.operators.operators/boolean
-    date cmql-core.operators.operators/date
-    decimal cmql-core.operators.operators/decimal
-    object-id cmql-core.operators.operators/object-id
-    string cmql-core.operators.operators/string
-    exists? cmql-core.operators.operators/exists?
-    not-exists? cmql-core.operators.operators/not-exists?
-    array? cmql-core.operators.operators/array?
-    object? cmql-core.operators.operators/object?
-    object-id? cmql-core.operators.operators/object-id?
-    date? cmql-core.operators.operators/date?
-    leti cmql-core.operators.operators/leti
-    set-field cmql-core.operators.operators/set-field
-    get-field cmql-core.operators.operators/get-field
-    unset-field cmql-core.operators.operators/unset-field
-    conj-at cmql-core.operators.operators/conj-at
-    index-of cmql-core.operators.operators/index-of
-    ziparray cmql-core.operators.operators/ziparray
-    not-empty? cmql-core.operators.operators/not-empty?
-    conj-distinct cmql-core.operators.operators/conj-distinct
-    all-true? cmql-core.operators.operators/all-true?
-    any-true? cmql-core.operators.operators/any-true?
-    subset? cmql-core.operators.operators/subset?
-    =sets cmql-core.operators.operators/=sets
-    union cmql-core.operators.operators/union
-    intersection cmql-core.operators.operators/intersection
-    difference cmql-core.operators.operators/difference
-    disjoint? cmql-core.operators.operators/disjoint?
-    not-disjoint? cmql-core.operators.operators/not-disjoint?
-    bson-size cmql-core.operators.operators/bson-size
-    conj-each cmql-core.operators.operators/conj-each
-    conj-each-distinct cmql-core.operators.operators/conj-each-distinct
-    avg cmql-core.operators.operators/avg
-    sum cmql-core.operators.operators/sum
-    count-a cmql-core.operators.operators/count-a
-    rank cmql-core.operators.operators/rank
-    dense-rank cmql-core.operators.operators/dense-rank
-    stdDevPop cmql-core.operators.operators/stdDevPop
-    stdDevSamp cmql-core.operators.operators/stdDevSamp
-    lower-case cmql-core.operators.operators/lower-case
-    upper-case cmql-core.operators.operators/upper-case
-    index-of-in-bytes cmql-core.operators.operators/index-of-in-bytes
-    index-of-str cmql-core.operators.operators/index-of-str
-    count-str cmql-core.operators.operators/count-str
-    count-str-bytes cmql-core.operators.operators/count-str-bytes
-    subs-bytes cmql-core.operators.operators/subs-bytes
-    split cmql-core.operators.operators/split
-    cmp-str-icase cmql-core.operators.operators/cmp-str-icase
-    triml cmql-core.operators.operators/triml
-    trimr cmql-core.operators.operators/trimr
-    trim cmql-core.operators.operators/trim
-    replace-all cmql-core.operators.operators/replace-all
+    abs squery-mongo-core.operators.operators/abs
+    pow squery-mongo-core.operators.operators/pow
+    exp squery-mongo-core.operators.operators/exp
+    ln  squery-mongo-core.operators.operators/ln
+    log squery-mongo-core.operators.operators/log
+    ceil squery-mongo-core.operators.operators/ceil
+    floor squery-mongo-core.operators.operators/floor
+    round squery-mongo-core.operators.operators/round
+    trunc squery-mongo-core.operators.operators/trunc
+    sqrt squery-mongo-core.operators.operators/sqrt
+    mod squery-mongo-core.operators.operators/mod
+    div squery-mongo-core.operators.operators/div
+    cmp squery-mongo-core.operators.operators/cmp
+    if- squery-mongo-core.operators.operators/if-
+    if-not-value squery-mongo-core.operators.operators/if-not-value
+    literal squery-mongo-core.operators.operators/literal
+    expr squery-mongo-core.operators.operators/expr
+    convert squery-mongo-core.operators.operators/convert
+    boolean squery-mongo-core.operators.operators/boolean
+    date squery-mongo-core.operators.operators/date
+    decimal squery-mongo-core.operators.operators/decimal
+    object-id squery-mongo-core.operators.operators/object-id
+    string squery-mongo-core.operators.operators/string
+    exists? squery-mongo-core.operators.operators/exists?
+    not-exists? squery-mongo-core.operators.operators/not-exists?
+    array? squery-mongo-core.operators.operators/array?
+    object? squery-mongo-core.operators.operators/object?
+    object-id? squery-mongo-core.operators.operators/object-id?
+    date? squery-mongo-core.operators.operators/date?
+    leti squery-mongo-core.operators.operators/leti
+    set-field squery-mongo-core.operators.operators/set-field
+    get-field squery-mongo-core.operators.operators/get-field
+    unset-field squery-mongo-core.operators.operators/unset-field
+    conj-at squery-mongo-core.operators.operators/conj-at
+    index-of squery-mongo-core.operators.operators/index-of
+    ziparray squery-mongo-core.operators.operators/ziparray
+    not-empty? squery-mongo-core.operators.operators/not-empty?
+    conj-distinct squery-mongo-core.operators.operators/conj-distinct
+    all-true? squery-mongo-core.operators.operators/all-true?
+    any-true? squery-mongo-core.operators.operators/any-true?
+    subset? squery-mongo-core.operators.operators/subset?
+    =sets squery-mongo-core.operators.operators/=sets
+    union squery-mongo-core.operators.operators/union
+    intersection squery-mongo-core.operators.operators/intersection
+    difference squery-mongo-core.operators.operators/difference
+    disjoint? squery-mongo-core.operators.operators/disjoint?
+    not-disjoint? squery-mongo-core.operators.operators/not-disjoint?
+    bson-size squery-mongo-core.operators.operators/bson-size
+    conj-each squery-mongo-core.operators.operators/conj-each
+    conj-each-distinct squery-mongo-core.operators.operators/conj-each-distinct
+    avg squery-mongo-core.operators.operators/avg
+    sum squery-mongo-core.operators.operators/sum
+    count-a squery-mongo-core.operators.operators/count-a
+    rank squery-mongo-core.operators.operators/rank
+    dense-rank squery-mongo-core.operators.operators/dense-rank
+    stdDevPop squery-mongo-core.operators.operators/stdDevPop
+    stdDevSamp squery-mongo-core.operators.operators/stdDevSamp
+    lower-case squery-mongo-core.operators.operators/lower-case
+    upper-case squery-mongo-core.operators.operators/upper-case
+    index-of-in-bytes squery-mongo-core.operators.operators/index-of-in-bytes
+    index-of-str squery-mongo-core.operators.operators/index-of-str
+    count-str squery-mongo-core.operators.operators/count-str
+    count-str-bytes squery-mongo-core.operators.operators/count-str-bytes
+    subs-bytes squery-mongo-core.operators.operators/subs-bytes
+    split squery-mongo-core.operators.operators/split
+    cmp-str-icase squery-mongo-core.operators.operators/cmp-str-icase
+    triml squery-mongo-core.operators.operators/triml
+    trimr squery-mongo-core.operators.operators/trimr
+    trim squery-mongo-core.operators.operators/trim
+    replace-all squery-mongo-core.operators.operators/replace-all
 
     ;;dates
-    date-add cmql-core.operators.operators/date-add
-    date-diff cmql-core.operators.operators/date-diff
-    date-from-parts cmql-core.operators.operators/date-from-parts
-    date-from-string cmql-core.operators.operators/date-from-string
-    date-subtract cmql-core.operators.operators/date-subtract
-    date-to-parts cmql-core.operators.operators/date-to-parts
-    date-to-string cmql-core.operators.operators/date-to-string
-    day-of-month cmql-core.operators.operators/day-of-month
-    day-of-week cmql-core.operators.operators/day-of-week
-    day-of-year cmql-core.operators.operators/day-of-year
-    iso-day-of-week cmql-core.operators.operators/iso-day-of-week
-    iso-week cmql-core.operators.operators/iso-week
-    iso-week-year cmql-core.operators.operators/iso-week-year
-    date-millisecond cmql-core.operators.operators/date-millisecond
-    date-second cmql-core.operators.operators/date-second
-    date-minute cmql-core.operators.operators/date-minute
-    date-hour cmql-core.operators.operators/date-hour
-    date-week cmql-core.operators.operators/date-week
-    date-month cmql-core.operators.operators/date-month
-    date-year cmql-core.operators.operators/date-year
-    date-trunc cmql-core.operators.operators/date-trunc
+    date-add squery-mongo-core.operators.operators/date-add
+    date-diff squery-mongo-core.operators.operators/date-diff
+    date-from-parts squery-mongo-core.operators.operators/date-from-parts
+    date-from-string squery-mongo-core.operators.operators/date-from-string
+    date-subtract squery-mongo-core.operators.operators/date-subtract
+    date-to-parts squery-mongo-core.operators.operators/date-to-parts
+    date-to-string squery-mongo-core.operators.operators/date-to-string
+    day-of-month squery-mongo-core.operators.operators/day-of-month
+    day-of-week squery-mongo-core.operators.operators/day-of-week
+    day-of-year squery-mongo-core.operators.operators/day-of-year
+    iso-day-of-week squery-mongo-core.operators.operators/iso-day-of-week
+    iso-week squery-mongo-core.operators.operators/iso-week
+    iso-week-year squery-mongo-core.operators.operators/iso-week-year
+    date-millisecond squery-mongo-core.operators.operators/date-millisecond
+    date-second squery-mongo-core.operators.operators/date-second
+    date-minute squery-mongo-core.operators.operators/date-minute
+    date-hour squery-mongo-core.operators.operators/date-hour
+    date-week squery-mongo-core.operators.operators/date-week
+    date-month squery-mongo-core.operators.operators/date-month
+    date-year squery-mongo-core.operators.operators/date-year
+    date-trunc squery-mongo-core.operators.operators/date-trunc
 
     ;;javascript
-    njs cmql-core.operators.operators/njs
-    ejs cmql-core.operators.operators/ejs
+    njs squery-mongo-core.operators.operators/njs
+    ejs squery-mongo-core.operators.operators/ejs
 
     ;;stages
-    pipeline cmql-core.operators.stages/pipeline
-    match cmql-core.operators.stages/match
-    limit cmql-core.operators.stages/limit
-    skip cmql-core.operators.stages/skip
-    redact cmql-core.operators.stages/redact
-    add cmql-core.operators.stages/add
-    set-s cmql-core.operators.stages/set-s
-    unset cmql-core.operators.stages/unset
-    facet cmql-core.operators.stages/facet
-    project cmql-core.operators.stages/project
-    unwind cmql-core.operators.stages/unwind
-    replace-root cmql-core.operators.stages/replace-root
-    replace-with cmql-core.operators.stages/replace-with
-    add-to-root cmql-core.operators.stages/add-to-root
-    move-to-root cmql-core.operators.stages/move-to-root
-    unwind-replace-root cmql-core.operators.stages/unwind-replace-root
-    unwind-add-to-root cmql-core.operators.stages/unwind-add-to-root
-    unwind-move-to-root cmql-core.operators.stages/unwind-move-to-root
-    group cmql-core.operators.stages/group
-    group-array cmql-core.operators.stages/group-array
-    reduce-array cmql-core.operators.stages/reduce-array
-    bucket cmql-core.operators.stages/bucket
-    bucket-auto cmql-core.operators.stages/bucket-auto
-    sort cmql-core.operators.stages/sort
-    group-count-sort cmql-core.operators.stages/group-count-sort
-    lookup cmql-core.operators.stages/lookup
-    plookup cmql-core.operators.stages/plookup
-    glookup cmql-core.operators.stages/glookup
-    join cmql-core.operators.stages/join
-    out cmql-core.operators.stages/out
-    if-match cmql-core.operators.stages/if-match
-    merge-s cmql-core.operators.stages/merge-s
-    union-s cmql-core.operators.stages/union-s
-    count-s cmql-core.operators.stages/count-s
-    group-count cmql-core.operators.stages/group-count
-    coll-stats-s cmql-core.operators.stages/coll-stats-s
-    current-op-s cmql-core.operators.stages/current-op-s
-    sample cmql-core.operators.stages/sample
-    wfields cmql-core.operators.stages/wfields
-    list-local-sessions cmql-core.operators.stages/list-local-sessions
+    pipeline squery-mongo-core.operators.stages/pipeline
+    match squery-mongo-core.operators.stages/match
+    limit squery-mongo-core.operators.stages/limit
+    skip squery-mongo-core.operators.stages/skip
+    redact squery-mongo-core.operators.stages/redact
+    add squery-mongo-core.operators.stages/add
+    set-s squery-mongo-core.operators.stages/set-s
+    unset squery-mongo-core.operators.stages/unset
+    facet squery-mongo-core.operators.stages/facet
+    project squery-mongo-core.operators.stages/project
+    unwind squery-mongo-core.operators.stages/unwind
+    replace-root squery-mongo-core.operators.stages/replace-root
+    replace-with squery-mongo-core.operators.stages/replace-with
+    add-to-root squery-mongo-core.operators.stages/add-to-root
+    move-to-root squery-mongo-core.operators.stages/move-to-root
+    unwind-replace-root squery-mongo-core.operators.stages/unwind-replace-root
+    unwind-add-to-root squery-mongo-core.operators.stages/unwind-add-to-root
+    unwind-move-to-root squery-mongo-core.operators.stages/unwind-move-to-root
+    group squery-mongo-core.operators.stages/group
+    group-array squery-mongo-core.operators.stages/group-array
+    reduce-array squery-mongo-core.operators.stages/reduce-array
+    bucket squery-mongo-core.operators.stages/bucket
+    bucket-auto squery-mongo-core.operators.stages/bucket-auto
+    sort squery-mongo-core.operators.stages/sort
+    group-count-sort squery-mongo-core.operators.stages/group-count-sort
+    lookup squery-mongo-core.operators.stages/lookup
+    plookup squery-mongo-core.operators.stages/plookup
+    glookup squery-mongo-core.operators.stages/glookup
+    join squery-mongo-core.operators.stages/join
+    out squery-mongo-core.operators.stages/out
+    if-match squery-mongo-core.operators.stages/if-match
+    merge-s squery-mongo-core.operators.stages/merge-s
+    union-s squery-mongo-core.operators.stages/union-s
+    count-s squery-mongo-core.operators.stages/count-s
+    group-count squery-mongo-core.operators.stages/group-count
+    coll-stats-s squery-mongo-core.operators.stages/coll-stats-s
+    current-op-s squery-mongo-core.operators.stages/current-op-s
+    sample squery-mongo-core.operators.stages/sample
+    wfields squery-mongo-core.operators.stages/wfields
+    list-local-sessions squery-mongo-core.operators.stages/list-local-sessions
 
     ;;query operators
 
     ;;qcompare
-    =? cmql-core.operators.qoperators/=?
-    >? cmql-core.operators.qoperators/>?
-    >=? cmql-core.operators.qoperators/>=?
-    <? cmql-core.operators.qoperators/<?
-    <=? cmql-core.operators.qoperators/<=?
+    =? squery-mongo-core.operators.qoperators/=?
+    >? squery-mongo-core.operators.qoperators/>?
+    >=? squery-mongo-core.operators.qoperators/>=?
+    <? squery-mongo-core.operators.qoperators/<?
+    <=? squery-mongo-core.operators.qoperators/<=?
 
     ;;qlogical
-    not=? cmql-core.operators.qoperators/not=?
-    in? cmql-core.operators.qoperators/in?
-    not-in? cmql-core.operators.qoperators/not-in?
-    not? cmql-core.operators.qoperators/not?
-    and? cmql-core.operators.qoperators/and?
-    nor? cmql-core.operators.qoperators/nor?
-    or? cmql-core.operators.qoperators/or?
+    not=? squery-mongo-core.operators.qoperators/not=?
+    in? squery-mongo-core.operators.qoperators/in?
+    not-in? squery-mongo-core.operators.qoperators/not-in?
+    not? squery-mongo-core.operators.qoperators/not?
+    and? squery-mongo-core.operators.qoperators/and?
+    nor? squery-mongo-core.operators.qoperators/nor?
+    or? squery-mongo-core.operators.qoperators/or?
 
     ;;
-    exists?? cmql-core.operators.qoperators/exists??
-    not-exists?? cmql-core.operators.qoperators/not-exists??
-    type? cmql-core.operators.qoperators/type?
+    exists?? squery-mongo-core.operators.qoperators/exists??
+    not-exists?? squery-mongo-core.operators.qoperators/not-exists??
+    type? squery-mongo-core.operators.qoperators/type?
 
     ;;qevaluation
-    mod? cmql-core.operators.qoperators/mod?
-    re-find?? cmql-core.operators.qoperators/re-find??
-    json-schema? cmql-core.operators.qoperators/json-schema?
-    text? cmql-core.operators.qoperators/text?
-    where? cmql-core.operators.qoperators/where?
-    superset? cmql-core.operators.qoperators/superset?
-    elem-match? cmql-core.operators.qoperators/elem-match?
-    count? cmql-core.operators.qoperators/count?
+    mod? squery-mongo-core.operators.qoperators/mod?
+    re-find?? squery-mongo-core.operators.qoperators/re-find??
+    json-schema? squery-mongo-core.operators.qoperators/json-schema?
+    text? squery-mongo-core.operators.qoperators/text?
+    where? squery-mongo-core.operators.qoperators/where?
+    superset? squery-mongo-core.operators.qoperators/superset?
+    elem-match? squery-mongo-core.operators.qoperators/elem-match?
+    count? squery-mongo-core.operators.qoperators/count?
 
     ;;update operators
-    now-date! cmql-core.operators.uoperators/now-date!
-    +! cmql-core.operators.uoperators/+!
-    *! cmql-core.operators.uoperators/*!
-    min! cmql-core.operators.uoperators/min!
-    max! cmql-core.operators.uoperators/max!
-    rename! cmql-core.operators.uoperators/rename!
-    set!- cmql-core.operators.uoperators/set!-
-    set-on-insert! cmql-core.operators.uoperators/set-on-insert!
-    unset! cmql-core.operators.uoperators/unset!
-    conj-distinct! cmql-core.operators.uoperators/conj-distinct!
-    conj! cmql-core.operators.uoperators/conj!
-    pop! cmql-core.operators.uoperators/pop!
-    remove! cmql-core.operators.uoperators/remove!
-    remove-all! cmql-core.operators.uoperators/remove-all!
-    each! cmql-core.operators.uoperators/each!
-    position! cmql-core.operators.uoperators/position!
-    slice! cmql-core.operators.uoperators/slice!
-    sort! cmql-core.operators.uoperators/sort!
-    take! cmql-core.operators.uoperators/take!
+    now-date! squery-mongo-core.operators.uoperators/now-date!
+    +! squery-mongo-core.operators.uoperators/+!
+    *! squery-mongo-core.operators.uoperators/*!
+    min! squery-mongo-core.operators.uoperators/min!
+    max! squery-mongo-core.operators.uoperators/max!
+    rename! squery-mongo-core.operators.uoperators/rename!
+    set!- squery-mongo-core.operators.uoperators/set!-
+    set-on-insert! squery-mongo-core.operators.uoperators/set-on-insert!
+    unset! squery-mongo-core.operators.uoperators/unset!
+    conj-distinct! squery-mongo-core.operators.uoperators/conj-distinct!
+    conj! squery-mongo-core.operators.uoperators/conj!
+    pop! squery-mongo-core.operators.uoperators/pop!
+    remove! squery-mongo-core.operators.uoperators/remove!
+    remove-all! squery-mongo-core.operators.uoperators/remove-all!
+    each! squery-mongo-core.operators.uoperators/each!
+    position! squery-mongo-core.operators.uoperators/position!
+    slice! squery-mongo-core.operators.uoperators/slice!
+    sort! squery-mongo-core.operators.uoperators/sort!
+    take! squery-mongo-core.operators.uoperators/take!
 
     ;;options
-    upsert cmql-core.operators.options/upsert
-    array-filters cmql-core.operators.options/array-filters
+    upsert squery-mongo-core.operators.options/upsert
+    array-filters squery-mongo-core.operators.options/array-filters
     ])

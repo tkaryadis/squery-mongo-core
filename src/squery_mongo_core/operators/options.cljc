@@ -1,5 +1,5 @@
-(ns cmql-core.operators.options
-  (:require [cmql-core.internal.convert.stages :refer [cmql-vector->cmql-map]]))
+(ns squery-mongo-core.operators.options
+  (:require [squery-mongo-core.internal.convert.stages :refer [squery-vector->squery-map]]))
 
 (defn remove-o []
   {:remove  true})
@@ -8,7 +8,7 @@
   {:new true})
 
 (defn fields-o [& fields]
-  (let [m (cmql-vector->cmql-map fields 0)]
+  (let [m (squery-vector->squery-map fields 0)]
     {:fields m}))
 
 (defn allow-disk-use []

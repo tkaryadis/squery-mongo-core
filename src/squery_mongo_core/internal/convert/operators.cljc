@@ -1,6 +1,6 @@
-(ns cmql-core.internal.convert.operators
-  (:require [cmql-core.internal.convert.common :refer [cmql-var? cmql-var->mql-var cmql-var-ref->mql-var-ref cmql-var-path->cmql-var]]
-            [cmql-core.utils :refer [ordered-map]]
+(ns squery-mongo-core.internal.convert.operators
+  (:require [squery-mongo-core.internal.convert.common :refer [squery-var? squery-var->mql-var squery-var-ref->mql-var-ref squery-var-path->squery-var]]
+            [squery-mongo-core.utils :refer [ordered-map]]
             [clojure.walk :refer [postwalk]]))
 
 
@@ -9,29 +9,29 @@
 
 ;;------------------------------------------fn- helpers-----------------------------------------------------------------
 
-(defn cmql-var-name
+(defn squery-var-name
   "Mongovar= :prefixNAMEsuffix  here i get 'NAME' only
    Its used fn operator"                    ; TODO REVIEW: needed?or final convert is enough?
-  [cmql-var]
-  (if (cmql-var? cmql-var)
-    (subs (cmql-var->mql-var (name cmql-var)) 2)                   ; remove the "$$" , fn- cmql-vars are never cmql-var-paths
-    cmql-var))
+  [squery-var]
+  (if (squery-var? squery-var)
+    (subs (squery-var->mql-var (name squery-var)) 2)                   ; remove the "$$" , fn- squery-vars are never squery-var-paths
+    squery-var))
 
 ;;---------------------------------------let- helpers-------------------------------------------------------------------
 
-(defn cmql-var-name-keyword
+(defn squery-var-name-keyword
   "Mongovar= :prefixNAMEsuffix  here i get :NAME only
    Its used at let operator"               ; TODO REVIEW: needed?or final convert is enough?
   [e]
-  (if (cmql-var? e)
-    (keyword (cmql-var-name e))
+  (if (squery-var? e)
+    (keyword (squery-var-name e))
     e))
 
-(defn let-cmql-vars->map [vars-values]
+(defn let-squery-vars->map [vars-values]
   (let [vars-values (first (reduce (fn [[vars-values index] v]
                                      (if (even? index)
-                                       [(conj vars-values (cmql-var-name-keyword v)) (inc index)]
-                                       [(conj vars-values (cmql-var-ref->mql-var-ref v)) (inc index)]))
+                                       [(conj vars-values (squery-var-name-keyword v)) (inc index)]
+                                       [(conj vars-values (squery-var-ref->mql-var-ref v)) (inc index)]))
                                    [[] 0]
                                    vars-values))]
     (into {} (into [] (map vec (partition 2 vars-values))))))
@@ -41,7 +41,7 @@
   "The let like mongos let,works only for independent vars"
   [vars-values result-expression]
   {"$let"
-   {:vars (let-cmql-vars->map vars-values)  ;;{ <var1>: <expression>, ... }
+   {:vars (let-squery-vars->map vars-values)  ;;{ <var1>: <expression>, ... }
     :in   result-expression}})
 
 ;;--------------------------------let with dependent vars helpers-------------------------------------------------------
@@ -61,11 +61,11 @@
           v-dep))
 
 
-(defn cmql-variables [form]
+(defn squery-variables [form]
   (let [members (atom [])]
     (postwalk (fn [m]
-                (if (cmql-var? m)
-                  (swap! members conj (cmql-var-path->cmql-var m))))
+                (if (squery-var? m)
+                  (swap! members conj (squery-var-path->squery-var m))))
               form)
     @members))
 
@@ -86,7 +86,7 @@
               v-value (second pair)
 
               ;;new-code(postwalk)
-              v-dep (cmql-variables v-value)
+              v-dep (squery-variables v-value)
               v-names-set (into #{} v-names)
               v-dep (into [] (filter (fn [dep] (contains? v-names-set dep)) v-dep))
 

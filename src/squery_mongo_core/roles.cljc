@@ -1,7 +1,7 @@
-(ns cmql-core.roles
-  (:require [cmql-core.internal.convert.common :refer [single-maps]]
-            [cmql-core.internal.convert.commands :refer [cmql-map->mql-map]]
-            [cmql-core.utils :refer [keyword-map]]))
+(ns squery-mongo-core.roles
+  (:require [squery-mongo-core.internal.convert.common :refer [single-maps]]
+            [squery-mongo-core.internal.convert.commands :refer [squery-map->mql-map]]
+            [squery-mongo-core.utils :refer [keyword-map]]))
 
 (def create-role-def
   {
@@ -42,9 +42,9 @@
                     (get command-map :updateRole)
                     (get command-map :createRole))
 
-        cmql-map (dissoc :updateRole :createRole)
+        squery-map (dissoc :updateRole :createRole)
 
-        command-body (cmql-map->mql-map cmql-map)
+        command-body (squery-map->mql-map squery-map)
         command-head (if update? {"updateRole" role-name} {"createRole" role-name})
 
         ;- (clojure.pprint/pprint command-map)
@@ -91,10 +91,10 @@
   "Requires = dropRole action"
   [db-name rolename & args]
   (let [options-map (apply (partial merge {})args)
-        cmql-map options-map
+        squery-map options-map
 
         command-head {"dropRole" rolename}
-        command-body (cmql-map->mql-map cmql-map)]
+        command-body (squery-map->mql-map squery-map)]
     {:db db-name
      :coll nil
      :command-head command-head
@@ -107,10 +107,10 @@
   [db-name & args]
   (let [
         options-map (apply (partial merge {})args)
-        cmql-map options-map
+        squery-map options-map
 
         command-head {"dropAllRolesFromDatabase" 1}
-        command-body (cmql-map->mql-map cmql-map)]
+        command-body (squery-map->mql-map squery-map)]
     {:db db-name
      :coll nil
      :command-head command-head
@@ -119,10 +119,10 @@
 (defn grant-privileges-to-role [db-name rolename privileges & args]
   (let [
         options-map (apply (partial merge {})args)
-        cmql-map (merge {:privileges privileges} options-map)
+        squery-map (merge {:privileges privileges} options-map)
 
         command-head {"grantPrivilegesToRole" rolename}
-        command-body (cmql-map->mql-map cmql-map)]
+        command-body (squery-map->mql-map squery-map)]
     {:db db-name
      :coll nil
      :command-head command-head
@@ -131,10 +131,10 @@
 
 (defn grant-roles-to-role [db-name rolename roles & args]
   (let [options-map (apply (partial merge {})args)
-        cmql-map (merge {:roles roles} options-map)
+        squery-map (merge {:roles roles} options-map)
 
         command-head {"grantRolesToRole" rolename}
-        command-body (cmql-map->mql-map cmql-map)]
+        command-body (squery-map->mql-map squery-map)]
     {:db db-name
      :coll nil
      :command-head command-head
@@ -158,10 +158,10 @@
   Actions can be subsets"
   [db-name rolename privileges & args]
   (let [options-map (apply (partial merge {})args)
-        cmql-map (merge {:privileges privileges} options-map)
+        squery-map (merge {:privileges privileges} options-map)
 
         command-head {"revokePrivilegesFromRole" rolename}
-        command-body (cmql-map->mql-map cmql-map)]
+        command-body (squery-map->mql-map squery-map)]
     {:db db-name
      :coll nil
      :command-head command-head
@@ -173,10 +173,10 @@
   [db-name rolename privileges & args]
   (let [
         options-map (apply (partial merge {})args)
-        cmql-map (merge {:privileges privileges} options-map)
+        squery-map (merge {:privileges privileges} options-map)
 
         command-head {"revokeRolesFromRole" rolename}
-        command-body (cmql-map->mql-map cmql-map)]
+        command-body (squery-map->mql-map squery-map)]
     {:db db-name
      :coll nil
      :command-head command-head
@@ -205,15 +205,15 @@
   "
   [db-name command-map & args]
   (let [
-        cmql-map (keyword-map command-map)
-        cmql-map (if (contains? cmql-map :filter)
-                      (assoc cmql-map :filter {"$expr" (get cmql-map :filter)})
-                      cmql-map)
+        squery-map (keyword-map command-map)
+        squery-map (if (contains? squery-map :filter)
+                      (assoc squery-map :filter {"$expr" (get squery-map :filter)})
+                      squery-map)
 
         roles-info-value (get command-map :rolesInfo)
 
         command-head {"rolesInfo" roles-info-value}
-        command-body (cmql-map->mql-map cmql-map)]
+        command-body (squery-map->mql-map squery-map)]
     {:db db-name
      :coll nil
      :command-head command-head

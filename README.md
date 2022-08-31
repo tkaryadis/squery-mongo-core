@@ -1,4 +1,4 @@
-**Project changed name to squery from cmql, and is moving to squery.org,
+**Project changed name to squery from cmql, and is moving to squery.org,  
 until moving completed those still work**
 
 ## Leiningen dependencies

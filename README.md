@@ -1,3 +1,25 @@
+**Project changed name to squery from cmql, and is moving to squery.org,
+until moving completed those still work**
+
+## Leiningen dependencies
+
+**Java or Clojure programmers** use squery-mongo-j
+
+```
+[org.cmql/cmql-core "0.2.0-SNAPSHOT"]
+[org.cmql/cmql-j "0.2.0-SNAPSHOT"]
+```
+
+**JS or Clojurescript programmers** use squery-mongo-js
+
+```
+[org.cmql/cmql-core "0.2.0-SNAPSHOT"]
+[org.cmql/cmql-js "0.2.0-SNAPSHOT"]
+```
+
+- [Documentation](https://cmql.org/)
+- [**Try it online, see many examples**](https://cmql.org/playmongo)
+
 ## SQuery
 
 - query and data processing language for MongoDB

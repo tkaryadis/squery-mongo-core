@@ -1516,8 +1516,12 @@
 (defn date-from-string
   "$dateFromString"
   [date-str & options]
-  (c/let [m {:dateString date-str}]
-    (merge m (apply (partial merge {}) options))))
+  (c/let [options (c/map (c/fn [o] (if (c/string? o)
+                                     {:format o}
+                                     o))
+                         options)
+          m {:dateString date-str}]
+    {"$dateFromString" (c/merge m (apply (partial c/merge {}) options))}))
 
 (defn date-subtract
   "$dateSubtract"

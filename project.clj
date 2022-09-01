@@ -15,6 +15,6 @@
                  ;;for java
                  [tupelo/tupelo "20.08.27"]
                  ;;convert clj <-> json for java
-                 [cheshire "5.10.0"]]
-  :plugins [[lein-codox "0.10.7"]]
-  )
+                 [cheshire "5.10.0"]
+                 ]
+  :plugins [[lein-codox "0.10.7"]])

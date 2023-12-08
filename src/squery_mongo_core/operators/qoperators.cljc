@@ -61,6 +61,8 @@
 ;;------------------------------------------------Logical---------------------------------------------------------------
 
 (defn not?
+  "example call
+     (not? :myfield (<? 5))"
   ([field q-operation]
    {"$__q__" {(name field) {"$not" (get q-operation "$__q__" q-operation)}}})
   ([q-operation]

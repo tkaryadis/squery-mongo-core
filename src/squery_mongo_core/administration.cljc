@@ -45,12 +45,14 @@
   View=predefined pipeline to run on the source collection
   They are not saved in memory or in disk,they are re-computed each time
   Can be used when many queries have a common starting part
-  Takes the pipeline and 'creates' the view in the database of the source"
+  Takes the pipeline and 'creates' the view in the database of the source
+  Pipeline stages are args without []"
   [db-namespace new-view-name & args]
   (let [
         [db-name coll-name] (split-db-namespace db-namespace)
         command-keys (command-keys create-def)
         args (single-maps args command-keys)
+        
         [pipeline args] (get-pipeline-options args command-keys)
         pipeline (squery-pipeline->mql-pipeline pipeline)
         args (conj args {:viewOn (name coll-name)} {:pipeline pipeline})
@@ -244,7 +246,8 @@
         command-head {"createIndexes" coll-name}
         command-body (squery-map->mql-map squery-map)
 
-        ;- (clojure.pprint/pprint command-map)
+        ;_ (prn command-head)
+        ;_ (clojure.pprint/pprint command-body)
         ]
     {:db db-name
      :coll coll-name

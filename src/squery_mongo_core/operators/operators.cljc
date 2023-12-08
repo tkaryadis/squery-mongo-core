@@ -1,15 +1,15 @@
 (ns squery-mongo-core.operators.operators
   (:refer-clojure :exclude [+ inc - dec * mod
                             = not= > >= < <=
-                            and or not nor
+                            and or not
                             if-not cond
-                            into type boolean double int long string exists? nil? some? true? false? array? object?
-                            regex? string? int? decimal? double? boolean? number? rand
-                            let get get-in assoc assoc-in dissoc dissoc-in
-                            concat conj contains? range reverse count take subvec empty? not-empty? conj-distinct
+                            into type boolean double int long   nil? some? true? false?
+                            string? int? decimal? double? boolean? number? rand
+                            let get get-in assoc assoc-in dissoc
+                            concat conj contains? range reverse count take subvec empty?
                             fn map filter reduce
                             first last merge max min
-                            str subs re-find re-matcher re-seq replace identity])
+                            str subs re-find re-matcher re-seq replace identity sort-array])
   (:require [clojure.core :as c]
             [squery-mongo-core.internal.convert.common :refer [args->nested-2args squery-var-ref->mql-var-ref]]
             [squery-mongo-core.internal.convert.operators :refer [squery-var-name get-nested-lets get-lets]]
@@ -1008,6 +1008,18 @@
        e-array
        (conj e-array e)))
 
+(defn sort-array
+  ([e-array sort-order]
+   {"$sortArray" {
+                  "input" e-array
+                  "sortBy" sort-order
+                  }})
+  ([e-array]
+   (c/let [[a o] (if (clojure.string/starts-with? (name e-array) "!")
+                 [(keyword (c/subs (name e-array) 1)) -1]
+                 [e-array 1])]
+     (sort-array a o))))
+
 ;;---------------------------Arrays(set operations)-------------------------
 ;;--------------------------------------------------------------------------
 ;;--------------------------------------------------------------------------
@@ -1781,6 +1793,7 @@
     subvec squery-mongo-core.operators.operators/subvec
     empty? squery-mongo-core.operators.operators/empty?
     conj-distinct squery-mongo-core.operators.operators/conj-distinct
+    sort-array squery-mongo-core.operators.operators/sort-array
     fn squery-mongo-core.operators.operators/fn
     map squery-mongo-core.operators.operators/map
     filter squery-mongo-core.operators.operators/filter

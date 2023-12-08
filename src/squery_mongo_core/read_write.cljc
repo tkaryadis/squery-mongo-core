@@ -448,6 +448,7 @@
           :explain "boolean"
           :comment "any"
 
+
           }
 
      :cljs {
@@ -481,14 +482,14 @@
 
   Call example
   (q :testdb.testcoll
-      (>_ :age 25)
-      (=_ :gender 'female')           ; filter, both will be 1 match stage with $and and $expr
-      {:pass (>_ :grade 5)}           ; addFields
+      (> :age 25)
+      (= :gender 'female')           ; filter, both will be 1 match stage with $and and $expr
+      {:pass (> :grade 5)}           ; addFields
       (group :hairColor               ; :hairColor :count  ,here :_id will be auto-replaced by :hairColor
-             {:count (sum- 1)})
+             {:count (sum-a 1)})
       [:count]                        ; project,keep only count
-      (>_ :count 20)                  ; another filter alone => 1 match stage
-      (sort- :!count)                 ; sort descending
+      (> :count 20)                  ; another filter alone => 1 match stage
+      (sort :!count)                 ; sort descending
       (skip 2)
       (limit 1))"
   [db-namespace & args]

@@ -7,6 +7,13 @@
             squery-mongo-core.operators.operators
             [squery-mongo-core.utils :refer [ordered-map]]))
 
+;;TODO
+;;missing stages
+;; $changeStream
+;; $changeStreamSplitLargeEvent
+;;to improve
+;;
+
 (defn pipeline
   "(pipeline stage1 stage2 ..) = [stage1 stage2 ...]
   Used optionally to avoid confusion"
@@ -149,6 +156,11 @@
   *i never mix keep/remove except :!_id"
   [& fields]
   (apply squery-project->mql-project fields))
+
+;;method: "linear"   step=#lipoun/diafora,   px  5 nul nul nul 20,  => 5,10,15,20
+;;locf isi me proigoumenou   px  5 nul nul nul 20 => 5 5 5 5 20
+
+
 
 ;;-------------------------------------------arrays---------------------------------------------------------------------
 ;;----------------------------------------------------------------------------------------------------------------------
@@ -363,6 +375,34 @@
                  (rest args)))))))
 
 
+(defn step [step bounds & unit]
+  (let [range {:range {:step step
+                       :bounds (if (keyword? bounds)
+                                 (name bounds)
+                                 bounds)}}]
+    (if (empty? unit)
+      range
+      (assoc range :unit (if (keyword? unit)
+                           (name unit)
+                           unit)))))
+
+(defn densify
+  "Call
+    (densify :field
+             [:field1 :field2 ...]  ;;optional
+             (step step-number bounds time-unit))
+    time-unit= millisecond/second/minute/hour/day/week/month/quarter/year"
+  [field & args]
+  (let [partition-by-fields (first (filter vector? args))
+        range-map (first (filter map? args))
+        densify-map {:field (if (keyword? field) (name field) field)}
+        densify-map (merge densify-map range-map)
+        densify-map (if partition-by-fields
+                      (assoc densify-map :partitionByFields (mapv name partition-by-fields))
+                      densify-map)]
+    {"$densify" densify-map}))
+
+
 (declare plookup)
 
 (defn group-array
@@ -574,24 +614,29 @@
   and withe the pipeline i can make the joined docs to have any shape
   Call
   (plookup  :coll2 or [this-field :coll2.other-field-path]
-            [:v1- :afield ...] ; optional
+            [:v1. :afield ...] ; optional
             [stage1
              stage2]
             :joined)"
   ([join-info let-vars pipeline join-result-field]
    (if-not (coll? join-info)
-     (let [m {:from (name join-info)
-              :pipeline (squery-pipeline->mql-pipeline pipeline)
-              :as (name join-result-field)}]
+     (let [m {:pipeline (squery-pipeline->mql-pipeline pipeline)
+              :as (name join-result-field)}
+           ;;if $documents in pipeline , no from
+           m (if (some? join-info) (assoc m :from (name join-info)) m)]
        {"$lookup" (if let-vars (assoc m :let (let-squery-vars->map let-vars)) m)})
      (let [this-field (name (first join-info))
            other-coll-field-path (name (second join-info))
            [other-coll other-field-path] (split-db-namespace other-coll-field-path)
-           m {:from other-coll
-              :localField   this-field
+           ;;in case of pipeline uses documents, and no need from other coll, no from used
+           [other-coll other-field-path] (if (= other-field-path "")
+                                           [nil other-coll]
+                                           [other-coll other-field-path])
+           m {:localField   this-field
               :foreignField other-field-path
               :pipeline (squery-pipeline->mql-pipeline pipeline)
-              :as (name join-result-field)}]
+              :as (name join-result-field)}
+           m (if (some? other-coll) (assoc m :from other-coll) m)]
        {"$lookup" (if let-vars (assoc m :let (let-squery-vars->map let-vars)) m)})))
   ([join-info pipeline join-result-field]
    (plookup join-info nil pipeline join-result-field)))
@@ -683,8 +728,8 @@
   (merge :mydb.mycoll
          (if-match [field1 fied2]
            (let- [:v1- :f1 :v2- :f2 ...] ; to refer pipeline doc fields
-             whenMatched     ;;can also be pipeline
-             whenNoMatced)))
+             whenMatched)     ;;can also be pipeline             
+           whenNoMatced))
 
   whenMatched
    replace      (keep pipelines)
@@ -744,6 +789,14 @@
     {"$unionWith" {:coll (name coll-name)}}
     {"$unionWith" {:coll (name coll-name)
                    :pipeline (squery-pipeline->mql-pipeline stages)}}))
+
+
+
+;;--------------------------------------------add-custom-documents------------------------------------------------------
+
+(defn docs [docs-e]
+  {"$documents" docs-e})
+
 
 ;;-------------------------------------------------------count----------------------------------------------------------
 ;;----------------------------------------------------------------------------------------------------------------------

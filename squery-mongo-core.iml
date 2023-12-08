@@ -19,8 +19,6 @@
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="library" name="Leiningen: cheshire:5.10.0" level="project" />
     <orderEntry type="library" name="Leiningen: clj-time:0.15.2" level="project" />
-    <orderEntry type="library" name="Leiningen: clj-tuple:0.2.2" level="project" />
-    <orderEntry type="library" name="Leiningen: clojure-complete:0.2.5" level="project" />
     <orderEntry type="library" name="Leiningen: clojure-csv:2.0.2" level="project" />
     <orderEntry type="library" name="Leiningen: com.fasterxml.jackson.core/jackson-core:2.10.2" level="project" />
     <orderEntry type="library" name="Leiningen: com.fasterxml.jackson.dataformat/jackson-dataformat-cbor:2.10.2" level="project" />
@@ -29,7 +27,7 @@
     <orderEntry type="library" name="Leiningen: frankiesardo/linked:1.3.0" level="project" />
     <orderEntry type="library" name="Leiningen: joda-time:2.10.6" level="project" />
     <orderEntry type="library" name="Leiningen: me.raynes/fs:1.4.6" level="project" />
-    <orderEntry type="library" name="Leiningen: nrepl:0.6.0" level="project" />
+    <orderEntry type="library" name="Leiningen: nrepl:1.0.0" level="project" />
     <orderEntry type="library" name="Leiningen: org.apache.commons/commons-compress:1.8" level="project" />
     <orderEntry type="library" name="Leiningen: org.ccil.cowan.tagsoup/tagsoup:1.2.1" level="project" />
     <orderEntry type="library" name="Leiningen: org.clojure/clojure:1.10.0" level="project" />
@@ -49,13 +47,12 @@
     <orderEntry type="library" name="Leiningen: org.clojure/tools.analyzer:1.0.0" level="project" />
     <orderEntry type="library" name="Leiningen: org.clojure/tools.reader:1.3.3" level="project" />
     <orderEntry type="library" name="Leiningen: org.flatland/ordered:1.5.9" level="project" />
+    <orderEntry type="library" name="Leiningen: org.nrepl/incomplete:0.1.0" level="project" />
     <orderEntry type="library" name="Leiningen: org.ow2.asm/asm:5.2" level="project" />
     <orderEntry type="library" name="Leiningen: org.snakeyaml/snakeyaml-engine:2.1" level="project" />
     <orderEntry type="library" name="Leiningen: org.tukaani/xz:1.5" level="project" />
-    <orderEntry type="library" name="Leiningen: potemkin:0.4.5" level="project" />
     <orderEntry type="library" name="Leiningen: primitive-math:0.1.6" level="project" />
     <orderEntry type="library" name="Leiningen: prismatic/schema:1.1.12" level="project" />
-    <orderEntry type="library" name="Leiningen: riddley:0.1.12" level="project" />
     <orderEntry type="library" name="Leiningen: tigris:0.1.2" level="project" />
     <orderEntry type="library" name="Leiningen: tupelo:20.08.27" level="project" />
   </component>

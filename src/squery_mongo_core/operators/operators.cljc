@@ -2,6 +2,7 @@
   (:refer-clojure :exclude [+ inc - dec * mod
                             = not= > >= < <=
                             and or not
+                            bit-or bit-and bit-xor bit-not
                             if-not cond
                             into type boolean double int long   nil? some? true? false?
                             string? int? decimal? double? boolean? number? rand
@@ -14,7 +15,11 @@
             [squery-mongo-core.internal.convert.common :refer [args->nested-2args squery-var-ref->mql-var-ref]]
             [squery-mongo-core.internal.convert.operators :refer [squery-var-name get-nested-lets get-lets]]
             [squery-mongo-core.internal.convert.js-functions :refer [compile-library js-args-body js-info]]
+            [squery-mongo-core.internal.convert.stages :refer [squery-vector->squery-map]]
             [squery-mongo-core.utils :refer [ordered-map]]))
+
+
+;;last stopped
 
 ;;---------------------------Arithmetic-------------------------------------
 ;;--------------------------------------------------------------------------
@@ -29,8 +34,8 @@
   "$add
   Add numbers or numbers(milliseconds) to dates
   Call
-  (+_ 1 2)
-  (+_ :adate (*_ 5 60 1000))"
+  (+ 1 2)
+  (+ :adate (* 5 60 1000))"
   [& es]
   {"$add" (vec es)})
 
@@ -42,7 +47,7 @@
   Substract numbers or numbers(milliseconds) to dates
   Call
   (- 2 1)
-  (- :adate (*_ 5 60 1000))"
+  (- :adate (* 5 60 1000))"
   ([e-n]
    {"$substract" [0 e-n]})
   ([e-n & es]
@@ -130,6 +135,44 @@
   ([e-n & es]
    (args->nested-2args "$divide" (apply (partial c/conj [e-n]) es))))
 
+;;--------------------------Trigonometry-----------------------------------
+
+(defn acos [e]
+  {"$acos" e})
+
+(defn acosh [e]
+  {"$acosh" e})
+
+(defn asin [e]
+  {"$asin" e})
+
+(defn asinh [e]
+  {"$asinh" e})
+
+(defn atan [e]
+  {"$atan" e})
+
+(defn atan2 [e]
+  {"$atan2" e})
+
+(defn atanh [e]
+  {"$atanh" e})
+
+(defn cos [e]
+  {"$cos" e})
+
+(defn cosh [e]
+  {"$cosh" e})
+
+(defn sin [e]
+  {"$sin" e})
+
+(defn sinh [e]
+  {"$sinh" e})
+
+(defn degrees-to-radians [d-e]
+  {"$degreesToRadians" d-e })
+
 ;;---------------------------Comparison-------------------------------------
 ;;--------------------------------------------------------------------------
 ;;--------------------------------------------------------------------------
@@ -208,6 +251,21 @@
   [& es]
   (not (apply or es)))
 
+;;---------------------------BitOperators-----------------------------------
+
+(defn bit-and [& es]
+  {"$bitAnd" (c/into [] es)})
+
+(defn bit-or [& es]
+  {"$bitOr" (c/into [] es)})
+
+(defn bit-xor [& es]
+  {"$bitXor" (c/into [] es)})
+
+(defn bit-not [e]
+  {"bitNot" e})
+
+
 ;;---------------------------Conditional------------------------------------
 ;;--------------------------------------------------------------------------
 ;;--------------------------------------------------------------------------
@@ -229,10 +287,9 @@
 
 (defn if-not-value
   "$ifNull
-  Equivalent with (e nil or e not exist)
-  (if- (not-value?- e) nill-e e)"
-  [e nill-e]
-  {"$ifNull" [e nill-e]})
+   returns the first not nil arg"
+  [& args]
+  {"$ifNull" (c/into [] args)})
 
 (defn cond
   "$switch
@@ -931,6 +988,9 @@
   ([n e-array ]
    { "$slice" [e-array n]}))
 
+(defn take-from-start [e-number e-array]
+  { "$firstN" { "n" e-number , "input" e-array } })
+
 (declare min)
 
 (defn subvec
@@ -1137,6 +1197,12 @@
       {"$map" {:input e-array :in  in-value}}
       {"$map" {:input e-array :as argument :in  in-value}})))
 
+
+;;-------------------------------bin-data------------------------------------
+
+(defn bin-size [e]
+  {"$binarySize" e})
+
 ;;---------------------------Documents(some are mixed with arrays aboves)----------------------
 
 (defn bson-size [e-doc]
@@ -1154,6 +1220,14 @@
   else random"
   [e-group]
   {"$first" e-group})
+
+(defn take-acc
+  "$first
+  Used only in $group
+  Take the first n members of the group
+  if no sort is used in previous stage, its natural order"
+  [n e-group]
+  {"$firstN" {"input" e-group "n" n}})
 
 (defn last
   "$last
@@ -1188,6 +1262,22 @@
   Adds new member on the acc array only if not exists already"
   [e]
   {"$addToSet" e})
+
+;;{
+;   $bottom:
+;      {
+;         sortBy: { <field1>: <sort order>, <field2>: <sort order> ... },
+;         output: <expression>
+;      }
+;}
+(defn last-a [sort-vec  result-e]
+  {"$bottom" {"sortBy" (squery-vector->squery-map sort-vec -1)
+              "output" result-e}})
+
+(defn lastn-a [n sort-vec result-e]
+  {"$bottomN" {"sortBy" (squery-vector->squery-map sort-vec -1)
+               "output" result-e
+               "n" n}})
 
 
 ;;---------------------------Accumulators used in --------------------------
@@ -1306,6 +1396,37 @@
 
 (defn dense-rank []
   { "$denseRank" {}})
+
+(defn covariance-pop [number-e1 number-e2]
+  {"$covariancePop" [number-e1 number-e2]})
+
+(defn covariance-samp [number-e1 number-e2]
+  {"$covarianceSamp" [number-e1 number-e2]})
+
+(defn derivative
+  "$derivative
+  for averages inside the window
+   unit=week/day/hour/minute/second/millisecond"
+  [numeric-e unit-str]
+  {"$derivative" {"input" numeric-e "unit" unit-str}})
+
+(defn position
+  "$documentNumber
+   gives a number to each doc, based on the position
+   it has after sort in the window"
+  []
+  { "$documentNumber" {}})
+
+
+(defn exp-moving-avg [input-e n-or-alpha]
+  (c/let [m {"input" input-e}
+          m (if (c/double? n-or-alpha)
+              (assoc m :alpha n-or-alpha)
+              (assoc m :N n-or-alpha))]
+    {"$expMovingAvg" m}))
+
+(defn integral [input-e unit-e]
+  {"$integral" {"input" input-e, "unit" unit-e}})
 
 ;;---------------------------Strings----------------------------------------
 ;;--------------------------------------------------------------------------
@@ -1510,15 +1631,42 @@
 ;;--------------------------------------------------------------------------
 ;;--------------------------------------------------------------------------
 
-(defn date-add
-  "$dateAdd"
-  [op-map]
-  {"$dateAdd" op-map})
+(defn inc-date
+  "$dateAdd
+   unit=year/quarter/week/month/day/hour/minute/second/millisecond"
+  [date-e amount-e unit-e & timezone]
+  (c/let [m {"$dateAdd" {"startDate" date-e
+                         "unit" unit-e
+                         "amount" amount-e}}
+          m (if (c/not (c/empty? timezone))
+              (c/assoc m "timezone" (c/first timezone))
+              m)]
+    m))
+
+(defn dec-date
+  "$dateSubtract"
+  [date-e amount-e unit-e & timezone]
+  (c/let [m {"$dateSubtract" {"startDate" date-e
+                              "unit" unit-e
+                              "amount" amount-e}}
+          m (if (c/not (c/empty? timezone))
+              (c/assoc m "timezone" (c/first timezone))
+              m)]
+    m))
 
 (defn date-diff
   "$dateDiff"
-  [op-map]
-  {"$dateDiff" op-map})
+  [date1-e date2-e unit-e & optionals-map]
+  (c/let [m {"$dateDiff" {"startDate" date1-e
+                          "endDate" date2-e
+                          "unit" unit-e}}
+          m (if (c/get optionals-map :timezone)
+              (c/assoc m "timezone" (c/get optionals-map :timezone))
+              m)
+          m (if (c/get optionals-map :startOfWeek)
+              (c/assoc m "startOfWeek" (c/get optionals-map :startOfWeek))
+              m)]
+    m))
 
 (defn date-from-parts
   "$dateFromParts"
@@ -1527,27 +1675,42 @@
 
 (defn date-from-string
   "$dateFromString"
-  [date-str & options]
+  [date-e-str & options]
   (c/let [options (c/map (c/fn [o] (if (c/string? o)
                                      {:format o}
                                      o))
                          options)
-          m {:dateString date-str}]
-    {"$dateFromString" (c/merge m (apply (partial c/merge {}) options))}))
-
-(defn date-subtract
-  "$dateSubtract"
-  [op-map]
-  {"$dateSubtract" op-map})
+          m {:dateString date-e-str}]
+    {"$dateFromString" (c/merge m (c/apply (c/partial c/merge {}) options))}))
 
 (defn date-to-parts
   "$dateToParts"
-  [op-map]
-  {"$dateToParts" op-map})
+  [date-e & optionals-map]
+  (c/let [m {:date date-e}
+          m (if (c/not (c/empty? optionals-map))
+              (c/merge m (c/first optionals-map))
+              m)]
+    {"$dateToParts" m}))
 
-(defn date-to-string [op-map]
+(defn date-to-string
   "$dateToString"
-  {"$dateToString" op-map})
+  [date-e optionals-map]
+  (c/let [m {:date date-e}
+          m (if (c/not (c/empty? optionals-map))
+              (c/merge m (c/first optionals-map))
+              m)]
+    {"$dateToString" m}))
+
+
+(defn date-trunc
+  "$dateTrunc"
+  [date-e unit-e optionals-map]
+  (c/let [m {:date date-e
+             :unit unit-e}
+          m (if (c/not (c/empty? optionals-map))
+              (c/merge m (c/first optionals-map))
+              m)]
+    {"$dateTrunc" m}))
 
 (defn day-of-month [e-date]
   {"$dayOfMonth" e-date })
@@ -1590,9 +1753,7 @@
 
 (defn date-year [e-date]
   {"$year" e-date })
-  
-(defn date-trunc [date-doc]
-  {"$dateTrunc" date-doc})
+
 
 ;;-------------------------------------Cljs-compile---------------------------------------------------------------------
 

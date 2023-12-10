@@ -11,8 +11,15 @@
 ;;missing stages
 ;; $changeStream
 ;; $changeStreamSplitLargeEvent
-;;to improve
-;;
+;; $geoNear
+;; $indexStats
+;; $listSampledQueries
+;; $listSearchIndexes
+;; $listSessions
+;; $planCacheStats
+;; $search (atlas only)
+;; $searchMeta(atlas only)
+;; $shardedDataDistribution
 
 (defn pipeline
   "(pipeline stage1 stage2 ..) = [stage1 stage2 ...]
@@ -321,6 +328,10 @@
       :else
       {"$group" group-by-map})))
 
+
+(defn group-count-sort [expr]
+  { "$sortByCount"  expr})
+
 (defn wfields
   "$setWindowFields
   The 'current' string for the current document position in the output.
@@ -391,6 +402,10 @@
     (densify :field
              [:field1 :field2 ...]  ;;optional
              (step step-number bounds time-unit))
+    bounds (i add missing documents in number1+step,number1+step, ...  < number2)
+      [number1 number2]
+      full => all collection,  full range
+      partition => like full but for each partition
     time-unit= millisecond/second/minute/hour/day/week/month/quarter/year"
   [field & args]
   (let [partition-by-fields (first (filter vector? args))
@@ -401,6 +416,39 @@
                       (assoc densify-map :partitionByFields (mapv name partition-by-fields))
                       densify-map)]
     {"$densify" densify-map}))
+
+(defn fill
+  "adds values on fields that have nil values or missing
+   2 ways to add values
+     add constant values to all nil/missing , value: aValue (no sort required)
+     sort the existing found values, and fill based on a method, for example linear
+     (if i use a method to add values, sort is required)
+   2 methods
+     linear the average value next+prv/2
+     locf   add the prv seen value(based on sorting)
+   if partition, those done inside the partition, sorting+method
+   Call way(nil is used for optional)
+   (fill {:partitionBy expr :partitionByFields [:fiel1 ...]} ;;1 of those 2
+          [:field1 :field2]
+          {:field1 aValue :field2 'linearORlocf'})
+   for optional args nil is used
+  "
+  [partition-options-map-or-nil sort-vec-or-nil output-pairs-map]
+  (let [partitionBy (get partition-options-map-or-nil :partitionBy)
+        partitionByFields (get partition-options-map-or-nil :partitionByFields)
+        sort-map (if (some? sort-vec-or-nil) (squery-vector->squery-map sort-vec-or-nil -1) nil)
+        output-map (reduce (fn [m pair]
+                             (assoc m (name (first pair))
+                                      (if (contains? #{"linear" "locf"} (second pair))
+                                        {:method (second pair)}
+                                        {:value (second pair)})))
+                           {}
+                           (into [] output-pairs-map))
+        m {:output output-map}
+        m (if partitionBy (assoc m :partitionBy partitionBy) m)
+        m (if partitionByFields (assoc m :partitionByFields partitionByFields) m)
+        m (if sort-map (assoc m :sortBy sort-map) m)]
+    {"$fill" m}))
 
 
 (declare plookup)
@@ -563,7 +611,7 @@
 (defn sort
   "$sort
   Call
-  (sort- :a :!b)"
+  (sort :a :!b)"
   [& fields]
   (let [sort-doc (squery-vector->squery-map fields -1)]
     {"$sort" sort-doc}))

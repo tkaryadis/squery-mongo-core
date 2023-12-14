@@ -7,10 +7,10 @@
                             into type boolean double int long   nil? some? true? false?
                             string? int? decimal? double? boolean? number? rand
                             let get get-in assoc assoc-in dissoc
-                            concat conj contains? range reverse count take subvec empty?
+                            concat conj contains? range reverse count take take-last subvec empty?
                             fn map filter reduce
                             first last merge max min
-                            str subs re-find re-matcher re-seq replace identity sort-array])
+                            str subs re-find re-matcher re-seq replace identity ])
   (:require [clojure.core :as c]
             [squery-mongo-core.internal.convert.common :refer [args->nested-2args squery-var-ref->mql-var-ref]]
             [squery-mongo-core.internal.convert.operators :refer [squery-var-name get-nested-lets get-lets]]
@@ -18,8 +18,6 @@
             [squery-mongo-core.internal.convert.stages :refer [squery-vector->squery-map]]
             [squery-mongo-core.utils :refer [ordered-map]]))
 
-
-;;last stopped
 
 ;;---------------------------Arithmetic-------------------------------------
 ;;--------------------------------------------------------------------------
@@ -172,6 +170,9 @@
 
 (defn degrees-to-radians [d-e]
   {"$degreesToRadians" d-e })
+
+(defn radians-to-degrees [r-e]
+  {"$radiansToDegrees" r-e})
 
 ;;---------------------------Comparison-------------------------------------
 ;;--------------------------------------------------------------------------
@@ -690,22 +691,17 @@
 
 ;;-------------------------------------------SET (arrays/objects and nested)--------------------------------------------
 
-(defn unset-field [doc field]
-  {"$unsetField" {:field (name field)
+(defn unset-field [doc field-not-variable]
+  {"$unsetField" {:field (name field-not-variable)
                   :input doc}})
   
-(defn set-field [doc field value]
-  {"$setField" {:field (name field)
+(defn set-field [doc field-not-variable value]
+  {"$setField" {:field (name field-not-variable)
                 :input doc
                 :value value}})
                 
-(defn get-field [doc field]
-  {
-   "$getField" {
-    "field" field,
-    "input" doc
-    }
-  })
+(defn get-field [doc field-not-variable]
+  {"$getField" {"field" field-not-variable, "input" doc}})
 
 (declare merge filter take)
 
@@ -933,17 +929,31 @@
   [& e-arrays]
   {"$concatArrays" (vec e-arrays)})
 
-(defn conj
-  "Like $push but implemented with concat-
-  Not O(1) $push works only in group"
-  [e-array e]
-  (concat e-array [e]))
 
 (defn contains?
   "$in
   True is e is member(not index) of e-array"
   [e-array e]
   {"$in" [e e-array]})
+
+(defn conj
+  "with 2 args for arrays like $push but slow with concat not O(n)
+   with 1 args its $push for groups and its fast"
+  ([e-array e]
+   (concat e-array [e]))
+  ([e]
+   {"$push" e}))
+
+(defn conj-distinct
+  "with 2 args for arrays, uses contains? is not O(1)
+   with 1 arg is for groups, its $addToSet"
+  ([e-array e]
+   (if- (contains? e-array e)
+        e-array
+        (conj e-array e)))
+  ([e]
+   {"$addToSet" e}))
+
 
 (defn index-of
   "$indexOfArray
@@ -975,21 +985,11 @@
   {"$reverseArray" e-array})
 
 (defn count
-  "$size"
-  [e-array]
-  {"$size" e-array})
-
-(defn take
-  "$slice
-  works like MQL slice,instead of indexes we give number of elements we want
-  but different argument order"
-  ([start-index n e-array]
-   { "$slice" [e-array start-index n]})
-  ([n e-array ]
-   { "$slice" [e-array n]}))
-
-(defn take-from-start [e-number e-array]
-  { "$firstN" { "n" e-number , "input" e-array } })
+  "$size,$count"
+  ([e-array]
+   {"$size" e-array})
+  ([]
+   {"$count" {}}))
 
 (declare min)
 
@@ -1060,20 +1060,13 @@
 (defn not-empty? [e-array]
   (not= e-array []))
 
-(defn conj-distinct
-  "Slow contains?- is not O(1)
-  If order not important,add get distinct after"
-  [e-array e]
-  (if- (contains? e-array e)
-       e-array
-       (conj e-array e)))
+
 
 (defn sort-array
   ([e-array sort-order]
-   {"$sortArray" {
-                  "input" e-array
-                  "sortBy" sort-order
-                  }})
+   (if (c/number? sort-order)
+     {"$sortArray" {"input" e-array "sortBy" sort-order}}
+     {"$sortArray" {"input" e-array "sortBy" (squery-vector->squery-map sort-order -1)}}))
   ([e-array]
    (c/let [[a o] (if (clojure.string/starts-with? (name e-array) "!")
                  [(keyword (c/subs (name e-array) 1)) -1]
@@ -1208,85 +1201,55 @@
 (defn bson-size [e-doc]
   { "$bsonSize" e-doc })
 
-;;--------------------------Group operators used in $group ONLY---------------------------------
-;;group operators => argument = the group
+;;-------------------------Accumulators(not arrays)------------------------
 
-(defn first
-  "$first
-  Used only in $group
-  Take the first member of the group.
-  Only used at $group(in arrays i use (get- ar 0))
-  If data were sorted on the keys that i group by i take the smallest
-  else random"
-  [e-group]
-  {"$first" e-group})
+(defn sort-first [sort-vec result-e]
+  {"$top" {"sortBy" (squery-vector->squery-map sort-vec -1)
+           "output" result-e}})
 
-(defn take-acc
-  "$first
-  Used only in $group
-  Take the first n members of the group
-  if no sort is used in previous stage, its natural order"
-  [n e-group]
-  {"$firstN" {"input" e-group "n" n}})
+(defn sort-take [n sort-vec result-e]
+  {"$topN" {"sortBy" (squery-vector->squery-map sort-vec -1)
+            "output" result-e
+            "n" n}})
 
-(defn last
-  "$last
-  Used only in $group
-  Take the last member of the group.
-  Only used at $group(in arrays i use (get- ar (-_ (count- ar) 1)))
-  If data were sorted on the keys that i group by i take the largest
-  else random"
-  [e-group]
-  {"$last" e-group})
-
-;;---------------------------Accumulators used in $group ONLY(they have 1 argument,the other is implied)---------------
-;;accumulators => argument = each member of the group
-;;those acculumators runs 1 time for each member of the group
-;;for example (conj-each- :myfield) will add all the :myfield values on the group
-;;i can use whatever expression or constant,constant is common to count the group size
-;;for example if group_size=5 , (conj-each 1) will make [1 1 1 1 1] for that groupid
-;;(sum- 1) will add 1 for each member of the group to make 5 => count group etc
-
-(defn conj-each
-  "$push
-  Used only in $group
-  Run 1 time/ member of the group
-  Adds the member at the end of the acc array"
-  [e]
-  {"$push" e})
-
-(defn conj-each-distinct
-  "$addToSet
-  Used only in $group
-  Run 1 time/ member of the group
-  Adds new member on the acc array only if not exists already"
-  [e]
-  {"$addToSet" e})
-
-;;{
-;   $bottom:
-;      {
-;         sortBy: { <field1>: <sort order>, <field2>: <sort order> ... },
-;         output: <expression>
-;      }
-;}
-(defn last-a [sort-vec  result-e]
+(defn sort-last [sort-vec result-e]
   {"$bottom" {"sortBy" (squery-vector->squery-map sort-vec -1)
               "output" result-e}})
 
-(defn lastn-a [n sort-vec result-e]
+(defn sort-take-last [n sort-vec result-e]
   {"$bottomN" {"sortBy" (squery-vector->squery-map sort-vec -1)
                "output" result-e
                "n" n}})
 
+;;count/conj/conj-distinct used with 1 arg, with the 2 arg array version
 
-;;---------------------------Accumulators used in --------------------------
-;$group
-;$match if inside {$expr ...}
-;$addFields=$set
-;$project=$unset
-;$replaceRoot=$replaceWith
-;;--------------------------------------------------------------------------
+;;--------------------------Accumulators+arrays-----------------------------
+;;arrays + bucket/bucketAuto/group/windowFields
+
+(defn first
+  "$first"
+  [e-group-e-array]
+  {"$first" e-group-e-array})
+
+(defn take
+  "$firstN
+   $slice if start-index sand its only for arrays"
+  ([e-n e-group-e-array]
+   {"$firstN" {"input" e-group-e-array "n" e-n}})
+  ([e-n start-index e-array]
+   { "$slice" [e-array start-index e-n]}))
+
+(defn last
+  "$last
+   sort before else natural order"
+  [e-group-e-array]
+  {"$last" e-group-e-array})
+
+(defn take-last
+  "$lastN
+   used in both groups and arrays"
+  [e-n e-group]
+  {"$lastN" {"input" e-group "n" e-n}})
 
 (defn avg
   "$avg
@@ -1328,21 +1291,21 @@
 (defn max
   "$max
   Can be used in
-  $group
-  $match if inside {$expr ...}
-  $addFields=$set
-  $project=$unset
-  $replaceRoot=$replaceWith
-  Compares(using $cmp) and returns the max
+  addFields/bucket/$bucketAuto/group/match/project/replaceRoot/window
   With 1 argument its always group or array, else >1 argument
   Call
-  (max- e)  ; the array is made from group 1e/member
-  (max- array)
-  (max- number1 number2 ...)"
+  (max e)  ; the array is made from group 1e/member
+  (max array)
+  (max number1 number2 ...)"
   ([group-or-array-e]
    {"$max" group-or-array-e})
   ([e1 e2 & es]
-   {"$max" (apply (partial c/conj [e1 e2]) es)}))
+   {"$max" (c/apply (c/partial c/conj [e1 e2]) es)}))
+
+(defn take-max
+  "$$maxN"
+  [e-n e-group-e-array]
+  {"$maxN" {"input" e-group-e-array "n" e-n}})
 
 (defn min
   "$min
@@ -1362,12 +1325,25 @@
   ([e1 e2 & es]
    {"$min" (apply (partial c/conj [e1 e2]) es)}))
 
+(defn take-min
+  "$minN"
+  [e-n e-group-e-array]
+  {"$minN" {"input" e-group-e-array "n" e-n}})
+
 (defn merge
   "$mergeObjects"
   ([group-or-array-e]
    {"$mergeObjects" group-or-array-e})
   ([e1 e2 & es]
    {"$mergeObjects" (apply (partial c/conj [e1 e2]) es)}))
+
+(defn percentile [e p-vec method-str]
+  {"$percentile" {"input" e "p"  p-vec "method" method-str}})
+
+;;-------------------------------------statistical---------------------------------------------------------------
+
+(defn median [e-n method-str]
+  {"$median"  {"input" e-n, "method" method-str}})
 
 ;;TODO (statistical)
 (defn stdDevPop
@@ -1386,10 +1362,8 @@
    {"$stdDevSamp" (apply (partial c/conj [e1 e2]) es)}))
 
 
-(defn count-a []
-  { "$count" {}})
 
-;;---------------------------windowField------------------------------------
+;;---------------------------window(ONLY)-------------------------
 
 (defn rank []
   { "$rank" {}})
@@ -1417,7 +1391,6 @@
   []
   { "$documentNumber" {}})
 
-
 (defn exp-moving-avg [input-e n-or-alpha]
   (c/let [m {"input" input-e}
           m (if (c/double? n-or-alpha)
@@ -1427,6 +1400,23 @@
 
 (defn integral [input-e unit-e]
   {"$integral" {"input" input-e, "unit" unit-e}})
+
+(defn linear-fill
+  "$linearFill"
+  [e]
+  {"$linearFill" e})
+
+(defn locf [e]
+  {"$locf" e})
+
+(defn shift [output-e by-int default-e]
+  {
+       "$shift" {
+                "output" output-e
+                "by" by-int
+                "default" default-e
+                }
+       })
 
 ;;---------------------------Strings----------------------------------------
 ;;--------------------------------------------------------------------------
@@ -1754,6 +1744,17 @@
 (defn date-year [e-date]
   {"$year" e-date })
 
+(defn ts-increment [e]
+  { "$tsIncrement" e })
+
+(defn $ts-second [e]
+  { "$tsSecond" e})
+
+;;-------------------------------------various-------------------------------------------------------------------------
+
+(defn sampleRate [e-double]
+  {"$sampleRate" e-double})
+
 
 ;;-------------------------------------Cljs-compile---------------------------------------------------------------------
 
@@ -1891,7 +1892,8 @@
                       }
          })))
 
-
+;;TODO if slow, here only clojure symbols others with :use
+;;expected to be ok even all here sometime check again
 (def operators-mappings
   '[+ squery-mongo-core.operators.operators/+
     inc squery-mongo-core.operators.operators/inc
@@ -1950,7 +1952,7 @@
     range squery-mongo-core.operators.operators/range
     reverse squery-mongo-core.operators.operators/reverse
     count squery-mongo-core.operators.operators/count
-    take squery-mongo-core.operators.operators/take
+
     subvec squery-mongo-core.operators.operators/subvec
     empty? squery-mongo-core.operators.operators/empty?
     conj-distinct squery-mongo-core.operators.operators/conj-distinct
@@ -1960,8 +1962,7 @@
     filter squery-mongo-core.operators.operators/filter
     reduce squery-mongo-core.operators.operators/reduce
     bson-size squery-mongo-core.operators.operators/bson-size
-    first squery-mongo-core.operators.operators/first
-    last squery-mongo-core.operators.operators/last
+
     merge squery-mongo-core.operators.operators/merge
     max squery-mongo-core.operators.operators/max
     min squery-mongo-core.operators.operators/min
@@ -1973,6 +1974,21 @@
     re-seq squery-mongo-core.operators.operators/re-seq
     replace squery-mongo-core.operators.operators/replace
     replace-all squery-mongo-core.operators.operators/replace-all
+
+    ;;accumulators
+    sort-first squery-mongo-core.operators.operators/sort-first
+    sort-take  squery-mongo-core.operators.operators/sort-take
+    sort-last squery-mongo-core.operators.operators/sort-last
+    sort-take-last squery-mongo-core.operators.operators/sort-take-last
+    ;;count/conj/conj-distinct 1 arg call combined with 2 arg call for arrays
+
+    ;;accumulators+arrays
+    first squery-mongo-core.operators.operators/first
+    take squery-mongo-core.operators.operators/take
+    last squery-mongo-core.operators.operators/last
+    take-last squery-mongo-core.operators.operators/take-last
+    avg squery-mongo-core.operators.operators/avg
+    sum squery-mongo-core.operators.operators/sum
 
     ;;Not clojure overides
 
@@ -2024,11 +2040,7 @@
     disjoint? squery-mongo-core.operators.operators/disjoint?
     not-disjoint? squery-mongo-core.operators.operators/not-disjoint?
     bson-size squery-mongo-core.operators.operators/bson-size
-    conj-each squery-mongo-core.operators.operators/conj-each
-    conj-each-distinct squery-mongo-core.operators.operators/conj-each-distinct
-    avg squery-mongo-core.operators.operators/avg
-    sum squery-mongo-core.operators.operators/sum
-    count-a squery-mongo-core.operators.operators/count-a
+
     rank squery-mongo-core.operators.operators/rank
     dense-rank squery-mongo-core.operators.operators/dense-rank
     stdDevPop squery-mongo-core.operators.operators/stdDevPop
@@ -2048,11 +2060,11 @@
     replace-all squery-mongo-core.operators.operators/replace-all
 
     ;;dates
-    date-add squery-mongo-core.operators.operators/date-add
+    inc-date squery-mongo-core.operators.operators/inc-date
     date-diff squery-mongo-core.operators.operators/date-diff
     date-from-parts squery-mongo-core.operators.operators/date-from-parts
     date-from-string squery-mongo-core.operators.operators/date-from-string
-    date-subtract squery-mongo-core.operators.operators/date-subtract
+    dec-date squery-mongo-core.operators.operators/dec-date
     date-to-parts squery-mongo-core.operators.operators/date-to-parts
     date-to-string squery-mongo-core.operators.operators/date-to-string
     day-of-month squery-mongo-core.operators.operators/day-of-month

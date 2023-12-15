@@ -31,7 +31,7 @@
 
 - [Documentation](https://squery.org/)
 - [**Try it online, see many examples**](https://squery.org/playmongo)
-- [SQuery chat server](https://discord.gg/zWDzp4B7Bf)
+- [SQuery discord server](https://discord.gg/zWDzp4B7Bf)
 
 ## SQuery
 

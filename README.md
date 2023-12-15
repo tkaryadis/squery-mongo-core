@@ -1,12 +1,8 @@
-## State
+## Updating for MongoDB7
 
-squery-mongo-core : OK for MongoDB 7  
-squery-mongoj     : OK for MongoDB 7   
-squery-mongoj-reactive : OK for MongoDB 7   
-
-**Don't use** :  
-The apps and the squery-mongojs update is in progress  
-
+Java/Clojure is updated.
+NodeJS/Clojurescript not yet(don't use).
+Also don't use the apps, they will be updated also.
 
 ## Leiningen dependencies
 

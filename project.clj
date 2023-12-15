@@ -1,6 +1,6 @@
 (defproject org.squery/squery-mongo-core "0.2.0-SNAPSHOT"
-  :description "Query MongoDB with up to 3x less code (cmql-core, used from both cmql-j,cmql-js)"
-  :url "https://github.com/tkaryadis/cmql-core"
+  :description "The SQuery core, used from both java and nodejs drivers"
+  :url "https://github.com/tkaryadis/squery-mongo-core"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :dependencies [[org.clojure/clojure "1.10.0"]

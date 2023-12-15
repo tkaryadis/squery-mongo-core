@@ -1,8 +1,8 @@
-## Updating for MongoDB7
+## Updating for MongoDB 7
 
-Java/Clojure is updated.
-NodeJS/Clojurescript not yet(don't use).
-Also don't use the apps, they will be updated also.
+- Java/Clojure is updated.  
+- NodeJS/Clojurescript not yet(don't use).  
+- Example apps not updated also(don't use).  
 
 ## Leiningen dependencies
 

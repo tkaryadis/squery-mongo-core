@@ -104,8 +104,9 @@ client.db("people").collection("workets").aggregate(
 ## SQuery projects
 
 - [org.squery/squery-mongo-core](https://github.com/tkaryadis/squery-mongo-core)
-- [org.squery/squery-mongoj](https://github.com/tkaryadis/squery-mongo-j)
-- [org.squery/squery-mongojs](https://github.com/tkaryadis/squery-mongo-js)
+- [org.squery/squery-mongoj](https://github.com/tkaryadis/squery-mongoj)
+- [org.squery/squery-mongoj-reactive](https://github.com/tkaryadis/squery-mongoj-reactive)
+- [org.squery/squery-mongojs](https://github.com/tkaryadis/squery-mongojs)
 
 ## SQuery example apps
 

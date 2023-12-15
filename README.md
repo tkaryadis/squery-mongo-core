@@ -107,7 +107,7 @@ client.db("people").collection("workets").aggregate(
 - [org.squery/squery-mongoj](https://github.com/tkaryadis/squery-mongo-j)
 - [org.squery/squery-mongojs](https://github.com/tkaryadis/squery-mongo-js)
 
-**SQuery example apps**
+## SQuery example apps
 
 - [Clojure](https://github.com/tkaryadis/squery-mongo-app-clj)
 - [Java](https://github.com/tkaryadis/squery-mongo-app-j)

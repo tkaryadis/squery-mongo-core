@@ -4,6 +4,8 @@
 - NodeJS/Clojurescript not yet(don't use).  
 - Example apps not updated also(don't use).  
 
+*project renamed from cmql to squery
+
 ## Leiningen dependencies
 
 **Java or Clojure programmers sync driver** 
@@ -24,20 +26,19 @@
 
 ```
 [org.squery/squery-mongo-core "0.2.0-SNAPSHOT"]
-[org.squery/squeryjs "0.2.0-SNAPSHOT"]
+[org.squery/squery-mongojs "0.2.0-SNAPSHOT"]
 ```
 
 ## Getting Started
 
 - [Documentation](https://squery.org/)
-- [**Try it online, see many examples**](https://squery.org/playmongo)
+- [**Try it online, 400+ examples**](https://squery.org/playmongo)
 - [SQuery discord server](https://discord.gg/zWDzp4B7Bf)
 
 ## SQuery
 
-- MongoDB query language using up to **3x less code**
-- programmable 
-- allowing using a simple DSL inside a general programming language
+- MongoDB query language using up to **3x less code**  
+- simple DSL inside a general programming language
 
 ## Usage
 

@@ -100,7 +100,6 @@
 (defn rename-collection [source-db-namespace target-db-namespace & args]
   (let [db-name "admin"
         args (conj args {:to (name target-db-namespace)})
-
         squery-map (apply (partial merge {}) args)
         command-head {"renameCollection" (name source-db-namespace)}
         command-body (squery-map->mql-map squery-map)]

@@ -1,11 +1,11 @@
 (ns squery-mongo-core.operators.operators
-  (:refer-clojure :exclude [+ inc - dec * mod
+  (:refer-clojure :exclude [abs + inc - dec * mod
                             = not= > >= < <=
                             and or not
                             bit-or bit-and bit-xor bit-not
                             if-not cond
                             into type boolean double int long   nil? some? true? false?
-                            string? int? decimal? double? boolean? number? rand
+                            string? int? decimal? double? boolean? number? rand 
                             let get get-in assoc assoc-in dissoc
                             concat conj contains? range reverse count take take-last subvec empty?
                             fn map filter reduce
@@ -1755,7 +1755,6 @@
 (defn sampleRate [e-double]
   {"$sampleRate" e-double})
 
-
 ;;-------------------------------------Cljs-compile---------------------------------------------------------------------
 
 (defn compile-functions
@@ -1895,7 +1894,8 @@
 ;;TODO if slow, here only clojure symbols others with :use
 ;;expected to be ok even all here sometime check again
 (def operators-mappings
-  '[+ squery-mongo-core.operators.operators/+
+  '[abs squery-mongo-core.operators.operators/abs
+    + squery-mongo-core.operators.operators/+
     inc squery-mongo-core.operators.operators/inc
     - squery-mongo-core.operators.operators/-
     dec squery-mongo-core.operators.operators/dec
@@ -1992,7 +1992,6 @@
 
     ;;Not clojure overides
 
-    abs squery-mongo-core.operators.operators/abs
     pow squery-mongo-core.operators.operators/pow
     exp squery-mongo-core.operators.operators/exp
     ln  squery-mongo-core.operators.operators/ln
